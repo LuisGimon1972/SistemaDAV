@@ -82,19 +82,19 @@ app.post('/clientes', async (req, res) => {
     telefone,
     celular,
     limite,
-    objetos // ← opcional
-  } = req.body;
+    objetos, // ← opcional
+  } = req.body
 
   if (!cpf || !nome) {
     return res.status(400).json({
-      erro: 'CPF e nome são obrigatórios'
-    });
+      erro: 'CPF e nome são obrigatórios',
+    })
   }
 
-  const client = await pool.connect();
+  const client = await pool.connect()
 
   try {
-    await client.query('BEGIN');
+    await client.query('BEGIN')
 
     // 🔹 1) INSERE CLIENTE (independente de objetos)
     const resultCliente = await client.query(
@@ -124,11 +124,11 @@ app.post('/clientes', async (req, res) => {
         email || null,
         telefone || null,
         celular || null,
-        limite || 0
-      ]
-    );
+        limite || 0,
+      ],
+    )
 
-    const clienteid = resultCliente.rows[0].id;
+    const clienteid = resultCliente.rows[0].id
 
     // 🔹 2) INSERE OBJETOS SOMENTE SE EXISTIREM
     if (Array.isArray(objetos) && objetos.length > 0) {
@@ -145,7 +145,7 @@ app.post('/clientes', async (req, res) => {
           ativo
         )
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-      `;
+      `
 
       for (const obj of objetos) {
         await client.query(sqlObjeto, [
@@ -157,37 +157,33 @@ app.post('/clientes', async (req, res) => {
           obj.cor || null,
           obj.placaSerie || null,
           obj.observacoes || null,
-          'SIM'
-        ]);
+          'SIM',
+        ])
       }
     }
 
-    await client.query('COMMIT');
+    await client.query('COMMIT')
 
     // 🔹 3) RESPOSTA ÚNICA (com ou sem objetos)
     res.status(201).json({
       sucesso: true,
-      id: clienteid
-    });
-
+      id: clienteid,
+    })
   } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('Erro ao salvar cliente:', err.message);
+    await client.query('ROLLBACK')
+    console.error('Erro ao salvar cliente:', err.message)
 
     if (err.code === '23505') {
       return res.status(409).json({
-        erro: 'Cliente já cadastrado'
-      });
+        erro: 'Cliente já cadastrado',
+      })
     }
 
-    res.status(500).json({ erro: err.message });
-
+    res.status(500).json({ erro: err.message })
   } finally {
-    client.release();
+    client.release()
   }
-});
-
-
+})
 
 // Atualizar cliente
 app.put('/clientes/:id', async (req, res) => {
@@ -226,10 +222,10 @@ app.delete('/clientes/:id', async (req, res) => {
 app.get('/itens', async (_, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT * 
-       FROM itens 
+      `SELECT *
+       FROM itens
        WHERE aplicacao = 'PRODUTO'
-       ORDER BY controle asc`
+       ORDER BY controle asc`,
     )
 
     res.json(rows)
@@ -241,10 +237,10 @@ app.get('/itens', async (_, res) => {
 app.get('/servicos', async (_, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT * 
-       FROM itens 
+      `SELECT *
+       FROM itens
        WHERE aplicacao = 'SERVICO'
-       ORDER BY controle asc`
+       ORDER BY controle asc`,
     )
 
     res.json(rows)
@@ -252,7 +248,6 @@ app.get('/servicos', async (_, res) => {
     res.status(500).json({ error: err.message })
   }
 })
-
 
 // Criar item
 app.post('/itens', async (req, res) => {
@@ -268,28 +263,28 @@ app.post('/itens', async (req, res) => {
       perlucro,
       precovenda,
       revenda,
-    } = req.body;
+    } = req.body
 
     // 🔹 força aplicação
-    const aplicacao = 'PRODUTO';
+    const aplicacao = 'PRODUTO'
 
     // 🔹 validações mínimas
     if (!nome || !precovenda) {
       return res.status(400).json({
-        error: 'Nome e preço de venda são obrigatórios'
-      });
+        error: 'Nome e preço de venda são obrigatórios',
+      })
     }
 
-    quantidade = Number(quantidade) || 0;
-    precocusto = Number(precocusto) || 0;
-    perlucro   = Number(perlucro)   || 0;
-    precovenda = Number(precovenda);
-    revenda    = Number(revenda)    || 0;
+    quantidade = Number(quantidade) || 0
+    precocusto = Number(precocusto) || 0
+    perlucro = Number(perlucro) || 0
+    precovenda = Number(precovenda)
+    revenda = Number(revenda) || 0
 
     if (quantidade <= 0) {
       return res.status(400).json({
-        error: 'Produto exige quantidade em estoque'
-      });
+        error: 'Produto exige quantidade em estoque',
+      })
     }
 
     const result = await pool.query(
@@ -310,32 +305,31 @@ app.post('/itens', async (req, res) => {
         perlucro,
         precovenda,
         revenda,
-      ]
-    );
+      ],
+    )
 
-    res.status(201).json({ controle: result.rows[0].controle });
-
+    res.status(201).json({ controle: result.rows[0].controle })
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
+    console.error(err)
+    res.status(500).json({ error: err.message })
   }
-});
+})
 
 app.post('/servicos', async (req, res) => {
   try {
     const {
       nome,
-      duracao,     // deve chegar REAL
+      duracao, // deve chegar REAL
       tipo,
       categoria,
-      precovenda
+      precovenda,
     } = req.body
 
     const aplicacao = 'SERVICO'
 
     if (!nome || precovenda === undefined) {
       return res.status(400).json({
-        error: 'Nome e preço de venda são obrigatórios'
+        error: 'Nome e preço de venda são obrigatórios',
       })
     }
 
@@ -350,7 +344,7 @@ app.post('/servicos', async (req, res) => {
 
       if (isNaN(duracaoReal) || duracaoReal <= 0) {
         return res.status(400).json({
-          error: 'Duração inválida'
+          error: 'Duração inválida',
         })
       }
     }
@@ -362,16 +356,15 @@ app.post('/servicos', async (req, res) => {
        RETURNING controle`,
       [
         nome.trim().toUpperCase(),
-        duracaoReal,   // REAL correto
+        duracaoReal, // REAL correto
         tipo || null,
         categoria || null,
         aplicacao,
-        precoVendaReal
-      ]
+        precoVendaReal,
+      ],
     )
 
     res.status(201).json({ controle: result.rows[0].controle })
-
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: err.message })
@@ -384,10 +377,10 @@ app.put('/servicos/:controle', async (req, res) => {
 
     const {
       nome,
-      duracao,     // REAL
+      duracao, // REAL
       tipo,
       categoria,
-      precovenda
+      precovenda,
     } = req.body
 
     if (!controle) {
@@ -396,7 +389,7 @@ app.put('/servicos/:controle', async (req, res) => {
 
     if (!nome || precovenda === undefined) {
       return res.status(400).json({
-        error: 'Nome e preço de venda são obrigatórios'
+        error: 'Nome e preço de venda são obrigatórios',
       })
     }
 
@@ -411,7 +404,7 @@ app.put('/servicos/:controle', async (req, res) => {
 
       if (isNaN(duracaoReal) || duracaoReal <= 0) {
         return res.status(400).json({
-          error: 'Duração inválida'
+          error: 'Duração inválida',
         })
       }
     }
@@ -432,27 +425,25 @@ app.put('/servicos/:controle', async (req, res) => {
         tipo || null,
         categoria || null,
         precoVendaReal,
-        controle
-      ]
+        controle,
+      ],
     )
 
     if (result.rowCount === 0) {
       return res.status(404).json({
-        error: 'Serviço não encontrado'
+        error: 'Serviço não encontrado',
       })
     }
 
     res.json({
       message: 'Serviço atualizado com sucesso',
-      controle: result.rows[0].controle
+      controle: result.rows[0].controle,
     })
-
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: err.message })
   }
 })
-
 
 // Atualizar item
 app.put('/itens/:controle', async (req, res) => {
@@ -1013,7 +1004,8 @@ app.get('/ordens', async (req, res) => {
     SELECT
       os.id,
       os.numeroos,
-      c.nome AS cliente,
+      os.clienteid,                 -- 🔑 ESSENCIAL
+      c.nome AS clientenome,        -- opcional (lista)
       os.dataabertura,
       os.status,
       os.valortotalitem,
@@ -1028,8 +1020,6 @@ app.get('/ordens', async (req, res) => {
 
   res.json(rows)
 })
-
-
 
 app.post('/ordens', async (req, res) => {
   const client = await pool.connect()
@@ -1048,7 +1038,7 @@ app.post('/ordens', async (req, res) => {
       acrescimo = 0,
       formapagamento,
       adiantamento = 0,
-      itens
+      itens,
     } = req.body
 
     // 🔎 Validações básicas
@@ -1068,7 +1058,7 @@ app.post('/ordens', async (req, res) => {
 
     // 🔢 Gerar número da OS
     const { rows } = await client.query(
-      `SELECT numeroos FROM ordemservico ORDER BY id DESC LIMIT 1`
+      `SELECT numeroos FROM ordemservico ORDER BY id DESC LIMIT 1`,
     )
 
     let numeroos = 'OS0001'
@@ -1084,7 +1074,7 @@ app.post('/ordens', async (req, res) => {
 
     // 🔢 Subtotal calculado pelos itens
     const subtotal = itens.reduce((acc, item) => {
-      return acc + (Number(item.quantidade) * Number(item.valorunitario))
+      return acc + Number(item.quantidade) * Number(item.valorunitario)
     }, 0)
 
     let descontoNum = Math.max(0, Number(desconto) || 0)
@@ -1105,11 +1095,7 @@ app.post('/ordens', async (req, res) => {
     }
 
     // 🔢 Total final blindado
-    let totalCalculado =
-      subtotal -
-      descontoNum -
-      adiantamentoNum +
-      acrescimoNum
+    let totalCalculado = subtotal - descontoNum - adiantamentoNum + acrescimoNum
 
     if (totalCalculado < VALOR_MINIMO_FATURA) {
       totalCalculado = VALOR_MINIMO_FATURA
@@ -1117,23 +1103,12 @@ app.post('/ordens', async (req, res) => {
 
     // 🔢 Separação por tipo (opcional / compatível)
     const valortotalitem = itens
-  .filter(i => i.tipoitem === 'PRODUTO')
-  .reduce(
-    (s, i) =>
-      s +
-      (Number(i.quantidade || 0) * Number(i.valorunitario || 0)),
-    0
-  )
+      .filter((i) => i.tipoitem === 'PRODUTO')
+      .reduce((s, i) => s + Number(i.quantidade || 0) * Number(i.valorunitario || 0), 0)
 
-const valortotalserv = itens
-  .filter(i => i.tipoitem === 'SERVICO')
-  .reduce(
-    (s, i) =>
-      s +
-      (Number(i.quantidade || 0) * Number(i.valorunitario || 0)),
-    0
-  )
-
+    const valortotalserv = itens
+      .filter((i) => i.tipoitem === 'SERVICO')
+      .reduce((s, i) => s + Number(i.quantidade || 0) * Number(i.valorunitario || 0), 0)
 
     // ================================
     // 🧾 INSERT ORDEM DE SERVIÇO
@@ -1178,8 +1153,8 @@ const valortotalserv = itens
         valortotalserv,
         totalCalculado,
         formapagamento || null,
-        adiantamentoNum
-      ]
+        adiantamentoNum,
+      ],
     )
 
     const ordemservicoid = ordemResult.rows[0].id
@@ -1209,8 +1184,8 @@ const valortotalserv = itens
           Number(item.quantidade),
           Number(item.valorunitario),
           Number(item.total),
-          item.tecnico || null
-        ]
+          item.tecnico || null,
+        ],
       )
     }
 
@@ -1220,9 +1195,8 @@ const valortotalserv = itens
       sucesso: true,
       mensagem: 'Ordem de serviço criada com sucesso',
       ordemservicoid,
-      numeroos
+      numeroos,
     })
-
   } catch (err) {
     await client.query('ROLLBACK')
     console.error('❌ ERRO AO SALVAR OS:', err)
@@ -1253,7 +1227,7 @@ app.get('/clientes/:id/objetos', async (req, res) => {
         AND ativo = 'SIM'
       ORDER BY tipo, marca, modelo
       `,
-      [id]
+      [id],
     )
 
     res.json(rows)
@@ -1261,8 +1235,6 @@ app.get('/clientes/:id/objetos', async (req, res) => {
     res.status(500).json({ error: err.message })
   }
 })
-
-
 
 // ==========================================
 //  INICIAR SERVIDOR

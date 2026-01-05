@@ -2726,6 +2726,7 @@ function excluirOrcamento(id) {
 
 const modoEdicao = ref(false)
 const idOrcamentoEdicao = ref(null)
+const idOsEdicao = ref(null)
 
 const editarOrcamento = async (row) => {
   //debugger
@@ -2770,6 +2771,36 @@ const verOrcamento = async (row) => {
   atualizarTotais()
   desabilitarTudo.value = true
   entrarOrcamento.value = false
+}
+
+const editarOs = async (row) => {
+  const status = (row.status || '').toUpperCase()
+  if (status === 'FINALIZADA' || status === 'FINALIZADO') {
+    showToast('Esta OS está finalizada e não pode ser editada!', 2000)
+    return
+  }
+  titulo.value = 'ATUALIZAR ORDEM DE SERVIÇO' + '  -  ' + 'Nº:' + row.numeroos
+
+  modoEdicao.value = true
+  cadastraros.value = true
+  idOsEdicao.value = row.id
+
+  clienteSelecionado.value = row.clienteid
+
+  observacao.value = row.observacoes ?? ''
+  condicao.value = row.condicao ?? ''
+
+  desconto.value = Number(row.desconto) || 0
+  acrescimo.value = Number(row.acrescimo) || 0
+  adiantamento.value = Number(row.adiantamento) || 0
+
+  item.value.status = row.status || 'ABERTO'
+
+  // 🚀 carregar itens (quando ativar)
+  // await carregarItensDaOs(row.id)
+
+  atualizarTotaisOs()
+  desabilitarTudo.value = false
 }
 
 function formatarDataBR(data) {
