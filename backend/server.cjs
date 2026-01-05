@@ -1207,6 +1207,26 @@ app.post('/ordens', async (req, res) => {
   }
 })
 
+app.get('/ordens/:id/itens', async (req, res) => {
+  const { id } = req.params
+
+  try {
+    const { rows } = await pool.query(
+      `
+      SELECT *
+      FROM itensordemservico
+      WHERE ordemservicoid = $1
+      ORDER BY id ASC
+      `,
+      [id],
+    )
+
+    res.json(rows)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 app.get('/clientes/:id/objetos', async (req, res) => {
   const { id } = req.params
 

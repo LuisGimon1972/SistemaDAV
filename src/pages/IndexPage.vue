@@ -2797,7 +2797,7 @@ const editarOs = async (row) => {
   item.value.status = row.status || 'ABERTO'
 
   // 🚀 carregar itens (quando ativar)
-  // await carregarItensDaOs(row.id)
+  await carregarItensDaOs(row.id)
 
   atualizarTotaisOs()
   desabilitarTudo.value = false
@@ -2826,6 +2826,20 @@ async function carregarItensDoOrcamento(id) {
     quantidade: item.quantidade,
     valorunit: item.valorunit,
     total: item.total,
+  }))
+}
+
+async function carregarItensDaOs(id) {
+  const res = await fetch(`${API_URL}/ordens/${id}/itens`)
+  const itens = await res.json()
+
+  itensOrdemos.value = itens.map((item) => ({
+    controle: item.id,
+    produtoid: item.produtoid,
+    descricao: item.descricao ?? item.nome ?? '',
+    quantidade: Number(item.quantidade) || 1,
+    valorunitario: Number(item.valorunit) || 0,
+    total: Number(item.total) || 0,
   }))
 }
 
