@@ -3003,6 +3003,7 @@ async function salvarEdicaoOs() {
     status: item.value.status,
     objetoveiculoid: objetoSelecionado.value,
     observacoes: observacao.value,
+    laudo: condicao.value,
     desconto: Number(desconto.value) || 0,
     acrescimo: Number(acrescimo.value) || 0,
     adiantamento: Number(adiantamento.value) || 0,

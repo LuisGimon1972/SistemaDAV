@@ -1220,6 +1220,7 @@ app.put('/ordens/:id', async (req, res) => {
       objetoveiculoid,
       status,
       observacoes,
+      laudo,
       desconto = 0,
       acrescimo = 0,
       adiantamento = 0,
@@ -1245,16 +1246,18 @@ app.put('/ordens/:id', async (req, res) => {
         objetoveiculoid = $2,
         status = $3,
         observacoes = $4,
-        desconto = $5,
-        acrescimo = $6,
-        adiantamento = $7
-      WHERE id = $8
+        laudo = $5,
+        desconto = $6,
+        acrescimo = $7,
+        adiantamento = $8
+      WHERE id = $9
       `,
       [
         clienteid,
         objetoveiculoid || null,
         status || 'ABERTA',
         observacoes || null,
+        laudo || null,
         Number(desconto),
         Number(acrescimo),
         Number(adiantamento),
