@@ -484,7 +484,7 @@
                   icon="delete"
                   dense
                   round
-                  @click="excluirItemOrç(props.row.controle)"
+                  @click="excluirItemOrç(props.rowIndex)"
                 >
                   <q-tooltip>Excluir</q-tooltip>
                 </q-btn>
@@ -746,12 +746,13 @@
                   icon="delete"
                   dense
                   round
-                  @click="excluirItemOrç(props.row.controle)"
+                  @click="excluirItemOs(props.rowIndex)"
                 >
                   <q-tooltip>Excluir</q-tooltip>
                 </q-btn>
               </q-td>
             </template>
+
             <template #no-data />
           </q-table>
 
@@ -2291,22 +2292,42 @@ function adicionarItem(item) {
 
 function adicionarItemOs(item) {
   if (!item) return
-  itensOrdemos.value.push({
-    produtoid: item.controle,
-    descricao: item.nome,
-    quantidade: 1,
-    valorunitario: item.precovenda,
-    total: item.precovenda,
-  })
+
+  // 🔍 verifica se o item já existe na OS
+  const existente = itensOrdemos.value.find((i) => i.produtoid === item.controle)
+
+  if (existente) {
+    // ➕ soma quantidade
+    existente.quantidade += 1
+    existente.total = Number(existente.quantidade) * Number(existente.valorunitario)
+  } else {
+    // 🆕 novo item
+    itensOrdemos.value.push({
+      produtoid: item.controle,
+      descricao: item.nome,
+      quantidade: 1,
+      valorunitario: Number(item.precovenda) || 0,
+      total: Number(item.precovenda) || 0,
+    })
+  }
+
+  // 🔄 recalcula totais da OS
   atualizarTotaisOs()
+
+  // 🧹 limpa busca
   resultadoBusca.value = []
   buscaItem.value = ''
   itemSelecionado.value = -1
 }
 
-function excluirItemOrç(controle) {
-  itensOrcamento.value = itensOrcamento.value.filter((i) => i.controle !== controle)
+function excluirItemOrç(index) {
+  itensOrcamento.value.splice(index, 1)
   atualizarTotais()
+}
+
+function excluirItemOs(index) {
+  itensOrdemos.value.splice(index, 1)
+  atualizarTotaisOs()
 }
 
 // Atualizar totais
@@ -2695,6 +2716,43 @@ async function carregarOrcamento() {
 }
 
 function excluirOrcamento(id) {
+  Notify.create({
+    message: 'Tem certeza que deseja excluir esse Orçamento?',
+    caption: 'Essa ação não poderá ser desfeita.',
+    color: 'blue-10',
+    icon: 'warning',
+    position: 'center',
+
+    actions: [
+      {
+        label: 'Cancelar',
+        color: 'white',
+      },
+      {
+        label: 'Excluir',
+        color: 'red-6',
+        handler: async () => {
+          try {
+            await fetch(`${API_URL}/orcamentos/${id}`, {
+              method: 'DELETE',
+            })
+            showToastv(`Orçamento excluído com sucesso!`, 1500)
+            carregarOrcamento()
+          } catch (err) {
+            console.error('Erro ao excluir orçamento:', err)
+
+            Notify.create({
+              type: 'negative',
+              message: 'Erro ao excluir orçamento. Verifique sua conexão.',
+            })
+          }
+        },
+      },
+    ],
+  })
+}
+
+function excluirOs(id) {
   Notify.create({
     message: 'Tem certeza que deseja excluir esse Orçamento?',
     caption: 'Essa ação não poderá ser desfeita.',
