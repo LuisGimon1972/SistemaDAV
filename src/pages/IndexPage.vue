@@ -284,7 +284,9 @@
                   ocultar()
                   limparOs()
                   trocartituloOs()
+                  desabilitarTudo = false
                   cadastraros = true
+                  entrarOrcamento = false
                   menuAtivo = 'cadastrooser'
                 }
               "
@@ -2841,9 +2843,15 @@ const verOrcamento = async (row) => {
 }
 
 const editarOs = async (row) => {
+  desabilitarTudo.value = false
+  entrarOrcamento.value = true
   const status = (row.status || '').toUpperCase()
   if (status === 'FINALIZADA' || status === 'FINALIZADO') {
-    showToast('Esta OS está finalizada e não pode ser editada!', 2000)
+    showToast('Esta OS está finalizada, não pode ser editada!', 2000)
+    return
+  }
+  if (status === 'CANCELADA' || status === 'CANCELADA') {
+    showToast('Esta OS está cancelada, não pode ser editada!', 2000)
     return
   }
 
@@ -2865,6 +2873,7 @@ const editarOs = async (row) => {
   acrescimo.value = Number(row.acrescimo) || 0
   adiantamento.value = Number(row.adiantamento) || 0
   totalGeral.value = Number(row.valortotal) || 0
+  //desabilitarTudo.value = false
 
   item.value.status = row.status || 'ABERTO'
 
@@ -2878,6 +2887,39 @@ const editarOs = async (row) => {
   // 👇 4º carrega itens
   await carregarItensDaOs(row.id)
   atualizarTotaisOs()
+}
+
+const verOs = async (row) => {
+  desabilitarTudo.value = true
+  titulo.value = 'VISUALIZAR ORDEM DE SERVIÇO - Nº: ' + row.numeroos
+
+  modoEdicao.value = true
+  cadastraros.value = true
+  listagemos.value = false
+
+  idOsEdicao.value = row.id
+
+  clienteSelecionado.value = row.clienteid
+
+  observacao.value = row.observacoes ?? ''
+  condicao.value = row.laudo ?? ''
+
+  desconto.value = Number(row.desconto) || 0
+  acrescimo.value = Number(row.acrescimo) || 0
+  adiantamento.value = Number(row.adiantamento) || 0
+  totalGeral.value = Number(row.valortotal) || 0
+
+  item.value.status = row.status || 'ABERTO'
+
+  await nextTick()
+  await aguardarObjetos()
+
+  objetoSelecionado.value = row.objetoveiculoid
+
+  await carregarItensDaOs(row.id)
+  atualizarTotaisOs()
+
+  entrarOrcamento.value = false
 }
 
 function aguardarObjetos() {
