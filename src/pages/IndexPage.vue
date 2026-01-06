@@ -882,7 +882,7 @@
             icon="arrow_back"
             label="Voltar ao cadastro do Cliente"
             class="q-mr-sm"
-            @click="mostrarFormObjetos = false"
+            @click="((mostrarCadastro = true), (mostrarFormObjetos = false))"
           />
 
           <h5 class="text-center q-mb-md">Cadastro de Objetos / Veículos</h5>
@@ -1785,7 +1785,6 @@ const buscarCep = async (val) => {
 }
 
 async function salvarCliente() {
-  //debugger
   if (!cliente.value.nome || !cliente.value.cpf || !cliente.value.limite) {
     showToast('Preencha todos os campos obrigatórios!', 1000)
     if (!cliente.value.cpf) return cpfInput.value?.focus()
@@ -1793,25 +1792,32 @@ async function salvarCliente() {
     if (!cliente.value.limite) return limiteInput.value?.focus()
     return
   }
-  if (cepcerto.value == false) {
-    showToast('Preencha um CEP correito!', 1000)
+
+  if (cepcerto.value === false) {
+    showToast('Preencha um CEP correto!', 1000)
     cliente.value.cep = ''
     return cepInput.value?.focus()
   }
 
+  /* =========================
+     🔹 NOVO CLIENTE (POST)
+     ========================= */
   if (!cliente.value.id) {
     const clientesExistentes = await fetch(`${API_URL}/clientes`).then((res) => res.json())
+
     const cpfDuplicado = clientesExistentes.find((c) => c.cpf === cliente.value.cpf)
+
     if (cpfDuplicado) {
       showToast('Já existe um cliente com este CPF!', 1500)
       return cpfInput.value?.focus()
     }
+
     const res = await fetch(`${API_URL}/clientes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...cliente.value,
-        objetos: objetos.value, // ← AQUI
+        objetos: objetos.value, // ✅ OK
       }),
     })
 
@@ -1822,11 +1828,19 @@ async function salvarCliente() {
     limparFormulario()
     carregarClientes()
   } else {
+
+  /* =========================
+     🔹 ATUALIZA CLIENTE (PUT)
+     ========================= */
     await fetch(`${API_URL}/clientes/${cliente.value.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(cliente.value),
+      body: JSON.stringify({
+        ...cliente.value,
+        objetos: objetos.value, // 🔥 ESSENCIAL
+      }),
     })
+
     showToastv('Cliente atualizado com sucesso!', 1000)
     limparFormulario()
     carregarClientes()
@@ -3171,7 +3185,7 @@ const columns = [
 ]
 
 const mostrarFormObjetos = ref(false)
-mostrarCadastro.value = false
+//mostrarCadastro.value = false
 
 // objeto em edição
 const objetoForm = ref({

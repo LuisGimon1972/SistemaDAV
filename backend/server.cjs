@@ -187,19 +187,176 @@ app.post('/clientes', async (req, res) => {
 
 // Atualizar cliente
 app.put('/clientes/:id', async (req, res) => {
-  const { id } = req.params
-  const { cpf, nome, fantasia, endereco, cep, bairro, email, telefone, celular, limite } = req.body
+  const clienteid = Number(req.params.id)
+
+  const { cpf, nome, fantasia, endereco, cep, bairro, email, telefone, celular, limite, objetos } =
+    req.body
+
+  if (!cpf || !nome) {
+    return res.status(400).json({
+      erro: 'CPF e nome são obrigatórios',
+    })
+  }
+
+  const client = await pool.connect()
+
   try {
-    await pool.query(
-      `UPDATE clientes
-       SET cpf=$1, nome=$2, fantasia=$3, endereco=$4, cep=$5, bairro=$6,
-           email=$7, telefone=$8, celular=$9, limite=$10
-       WHERE id=$11`,
-      [cpf, nome, fantasia, endereco, cep, bairro, email, telefone, celular, limite, id],
+    await client.query('BEGIN')
+
+    /* ============================
+       🔹 1) ATUALIZA CLIENTE
+       ============================ */
+    await client.query(
+      `
+      UPDATE clientes SET
+        cpf = $1,
+        nome = $2,
+        fantasia = $3,
+        endereco = $4,
+        cep = $5,
+        bairro = $6,
+        email = $7,
+        telefone = $8,
+        celular = $9,
+        limite = $10
+      WHERE id = $11
+      `,
+      [
+        cpf,
+        nome,
+        fantasia || null,
+        endereco || null,
+        cep || null,
+        bairro || null,
+        email || null,
+        telefone || null,
+        celular || null,
+        limite || 0,
+        clienteid,
+      ],
     )
-    res.sendStatus(200)
+
+    /* ============================
+       🔹 2) BUSCA OBJETOS ATIVOS
+       ============================ */
+    const objetosDb = await client.query(
+      `
+      SELECT id
+      FROM objetosveiculos
+      WHERE clienteid = $1
+        AND ativo = 'SIM'
+      `,
+      [clienteid],
+    )
+
+    const idsDb = objetosDb.rows.map((o) => o.id)
+
+    /* ============================
+       🔹 3) SEPARA PAYLOAD
+       ============================ */
+    const objetosPayload = Array.isArray(objetos) ? objetos : []
+
+    const idsPayload = objetosPayload.filter((o) => Number.isInteger(o.id)).map((o) => o.id)
+
+    /* ============================
+       🔹 4) DESATIVA SOMENTE
+       SE HOUVER REMOÇÃO REAL
+       ============================ */
+    if (idsPayload.length > 0) {
+      const idsRemover = idsDb.filter((id) => !idsPayload.includes(id))
+
+      if (idsRemover.length > 0) {
+        await client.query(
+          `
+          UPDATE objetosveiculos
+          SET ativo = 'NAO'
+          WHERE id = ANY($1)
+          `,
+          [idsRemover],
+        )
+      }
+    }
+
+    /* ============================
+       🔹 5) INSERE / ATUALIZA
+       ============================ */
+    for (const obj of objetosPayload) {
+      // 🔄 UPDATE
+      if (Number.isInteger(obj.id)) {
+        await client.query(
+          `
+          UPDATE objetosveiculos SET
+            tipo = $1,
+            marca = $2,
+            modelo = $3,
+            ano = $4,
+            cor = $5,
+            placaserie = $6,
+            observacoes = $7,
+            ativo = 'SIM'
+          WHERE id = $8
+            AND clienteid = $9
+          `,
+          [
+            obj.tipo || 'OUTRO',
+            obj.marca || null,
+            obj.modelo || null,
+            obj.ano || null,
+            obj.cor || null,
+            obj.placaSerie || null,
+            obj.observacoes || null,
+            obj.id,
+            clienteid,
+          ],
+        )
+      }
+
+      // ➕ INSERT
+      else {
+        await client.query(
+          `
+          INSERT INTO objetosveiculos (
+            clienteid,
+            tipo,
+            marca,
+            modelo,
+            ano,
+            cor,
+            placaserie,
+            observacoes,
+            ativo
+          )
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'SIM')
+          `,
+          [
+            clienteid,
+            obj.tipo || 'OUTRO',
+            obj.marca || null,
+            obj.modelo || null,
+            obj.ano || null,
+            obj.cor || null,
+            obj.placaSerie || null,
+            obj.observacoes || null,
+          ],
+        )
+      }
+    }
+
+    await client.query('COMMIT')
+
+    res.json({
+      sucesso: true,
+      id: clienteid,
+    })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    await client.query('ROLLBACK')
+    console.error('Erro PUT /clientes:', err)
+
+    res.status(500).json({
+      erro: err.message,
+    })
+  } finally {
+    client.release()
   }
 })
 
