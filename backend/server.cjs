@@ -1004,8 +1004,9 @@ app.get('/ordens', async (req, res) => {
     SELECT
       os.id,
       os.numeroos,
-      os.clienteid,                 -- 🔑 ESSENCIAL
-      c.nome AS clientenome,        -- opcional (lista)
+      os.clienteid,
+      os.objetoveiculoid,
+      c.nome AS cliente,
       os.dataabertura,
       os.status,
       os.observacoes,
@@ -1015,9 +1016,9 @@ app.get('/ordens', async (req, res) => {
       os.acrescimo,
       os.adiantamento,
       os.valortotal
-    FROM ordemservico os
-    JOIN clientes c ON c.id = os.clienteid
-    ORDER BY os.id DESC
+      FROM ordemservico os
+      JOIN clientes c ON c.id = os.clienteid
+      ORDER BY os.id DESC
   `)
 
   res.json(rows)
@@ -1203,6 +1204,99 @@ app.post('/ordens', async (req, res) => {
     await client.query('ROLLBACK')
     console.error('❌ ERRO AO SALVAR OS:', err)
 
+    res.status(500).json({ error: err.message })
+  } finally {
+    client.release()
+  }
+})
+
+app.put('/ordens/:id', async (req, res) => {
+  const { id } = req.params
+  const client = await pool.connect()
+
+  try {
+    const {
+      clienteid,
+      objetoveiculoid,
+      status,
+      observacoes,
+      desconto = 0,
+      acrescimo = 0,
+      adiantamento = 0,
+      itens,
+    } = req.body
+
+    // 🔒 Validações mínimas
+    if (!clienteid) {
+      return res.status(400).json({ error: 'clienteid é obrigatório' })
+    }
+
+    if (!Array.isArray(itens) || itens.length === 0) {
+      return res.status(400).json({ error: 'A OS precisa ter itens' })
+    }
+
+    await client.query('BEGIN')
+
+    // 🧾 Atualiza cabeçalho (AGORA COM STATUS)
+    await client.query(
+      `
+      UPDATE ordemservico SET
+        clienteid = $1,
+        objetoveiculoid = $2,
+        status = $3,
+        observacoes = $4,
+        desconto = $5,
+        acrescimo = $6,
+        adiantamento = $7
+      WHERE id = $8
+      `,
+      [
+        clienteid,
+        objetoveiculoid || null,
+        status || 'ABERTA',
+        observacoes || null,
+        Number(desconto),
+        Number(acrescimo),
+        Number(adiantamento),
+        id,
+      ],
+    )
+
+    // 🧹 Remove itens antigos
+    await client.query('DELETE FROM itensordemservico WHERE ordemservicoid = $1', [id])
+
+    // 🧩 Insere itens novamente
+    for (const item of itens) {
+      await client.query(
+        `
+        INSERT INTO itensordemservico (
+          ordemservicoid,
+          produtoid,
+          descricao,
+          tipoitem,
+          quantidade,
+          valorunitario,
+          total
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7)
+        `,
+        [
+          id,
+          item.produtoid || null,
+          item.descricao || '',
+          item.tipoitem || 'PRODUTO',
+          Number(item.quantidade),
+          Number(item.valorunitario),
+          Number(item.total),
+        ],
+      )
+    }
+
+    await client.query('COMMIT')
+
+    res.json({ success: true })
+  } catch (err) {
+    await client.query('ROLLBACK')
+    console.error('❌ ERRO PUT OS:', err)
     res.status(500).json({ error: err.message })
   } finally {
     client.release()

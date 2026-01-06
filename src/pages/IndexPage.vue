@@ -651,8 +651,10 @@
               :options="objetosCliente"
               option-value="id"
               :option-label="
-                (obj) =>
-                  `${obj.tipo} - ${obj.marca ?? ''} ${obj.modelo ?? ''} (${obj.placaserie ?? obj.numeroserie ?? 'S/N'})`
+                (obj) => {
+                  if (!obj) return ''
+                  return `${obj.tipo} - ${obj.marca ?? ''} ${obj.modelo ?? ''} (${obj.placaserie || obj.numeroserie || ''})`
+                }
               "
               label="Selecione o objeto / veículo"
               emit-value
@@ -822,7 +824,7 @@
             color="primary"
             icon="save"
             size="md"
-            @click="modoEdicao ? salvarEdicao() : salvarOrdem()"
+            @click="modoEdicao ? salvarEdicaoOs() : salvarOrdem()"
           />
 
           <q-btn
@@ -1472,7 +1474,7 @@ import {
   gerarRelatorioGeral,
   gerarRelatorioStatus,
 } from 'src/utils/relatorio.js'
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import novoCliente from 'src/models/Cliente'
 import novoItem from 'src/models/Item'
 import axios from 'axios'
@@ -2780,13 +2782,16 @@ const editarOs = async (row) => {
     showToast('Esta OS está finalizada e não pode ser editada!', 2000)
     return
   }
-  titulo.value = 'ATUALIZAR ORDEM DE SERVIÇO' + '  -  ' + 'Nº:' + row.numeroos
+
+  titulo.value = 'ATUALIZAR ORDEM DE SERVIÇO - Nº: ' + row.numeroos
 
   modoEdicao.value = true
   cadastraros.value = true
   listagemos.value = false
+
   idOsEdicao.value = row.id
 
+  // 👇 1º seta cliente (dispara o watch)
   clienteSelecionado.value = row.clienteid
 
   observacao.value = row.observacoes ?? ''
@@ -2796,11 +2801,30 @@ const editarOs = async (row) => {
   acrescimo.value = Number(row.acrescimo) || 0
   adiantamento.value = Number(row.adiantamento) || 0
   totalGeral.value = Number(row.valortotal) || 0
+
   item.value.status = row.status || 'ABERTO'
-  // 🚀 carregar itens (quando ativar)
+
+  // 👇 2º ESPERA os objetos carregarem
+  await nextTick()
+  await aguardarObjetos()
+
+  // 👇 3º agora sim seleciona o veículo
+  objetoSelecionado.value = row.objetoveiculoid
+
+  // 👇 4º carrega itens
   await carregarItensDaOs(row.id)
   atualizarTotaisOs()
-  //desabilitarTudo.value = false
+}
+
+function aguardarObjetos() {
+  return new Promise((resolve) => {
+    const stop = watch(objetosCliente, (lista) => {
+      if (lista && lista.length > 0) {
+        stop()
+        resolve()
+      }
+    })
+  })
 }
 
 function formatarDataBR(data) {
@@ -2870,6 +2894,39 @@ async function salvarEdicao() {
     carregarOrcamento()
   } else {
     showToast('Erro ao atualizar orçamento!')
+  }
+}
+
+async function salvarEdicaoOs() {
+  const dados = {
+    clienteid: clienteSelecionado.value,
+    status: item.value.status,
+    objetoveiculoid: objetoSelecionado.value,
+    observacoes: observacao.value,
+    desconto: Number(desconto.value) || 0,
+    acrescimo: Number(acrescimo.value) || 0,
+    adiantamento: Number(adiantamento.value) || 0,
+    itens: itensOrdemos.value,
+  }
+
+  console.log('PUT OS:', dados) // 👈 essencial
+
+  const res = await fetch(`${API_URL}/ordens/${idOsEdicao.value}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dados),
+  })
+
+  const resultado = await res.json()
+
+  if (res.ok && resultado.success) {
+    showToastv('Ordem de Serviço atualizada com sucesso!')
+    ocultar()
+    listagemos.value = true
+    listarOrdensServico()
+  } else {
+    console.error(resultado)
+    showToast(resultado.error || 'Erro ao atualizar OS')
   }
 }
 
