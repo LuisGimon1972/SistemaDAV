@@ -1085,7 +1085,13 @@
                       color="secondary"
                       icon="directions_car"
                       :label="`Objetos / Veículos (${objetos.length})`"
-                      @click="mostrarFormObjetos = !mostrarFormObjetos"
+                      @click="
+                        () => {
+                          mostrarCadastro = false
+                          listarClientes = false
+                          mostrarFormObjetos = !mostrarFormObjetos
+                        }
+                      "
                     />
                   </div>
                 </q-form>
@@ -3070,6 +3076,7 @@ const columns = [
 ]
 
 const mostrarFormObjetos = ref(false)
+mostrarCadastro.value = false
 
 // objeto em edição
 const objetoForm = ref({
