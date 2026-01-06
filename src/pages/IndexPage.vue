@@ -646,20 +646,20 @@
           <!-- SELECT DO OBJETO / VEÍCULO -->
           <div class="col-12 col-md-4">
             <q-select
+              :key="clienteSelecionado"
               filled
               v-model="objetoSelecionado"
               :options="objetosCliente"
               option-value="id"
               :option-label="
-                (obj) => {
-                  if (!obj) return ''
-                  return `${obj.tipo} - ${obj.marca ?? ''} ${obj.modelo ?? ''} (${obj.placaserie || obj.numeroserie || ''})`
-                }
+                (obj) =>
+                  obj
+                    ? `${obj.tipo} - ${obj.marca ?? ''} ${obj.modelo ?? ''} (${obj.placaserie ?? obj.numeroserie ?? 'S/N'})`
+                    : ''
               "
               label="Selecione o objeto / veículo"
               emit-value
               map-options
-              :loading="carregandoObjetos"
               :disable="!clienteSelecionado || objetosCliente.length === 0"
             >
               <template #no-option>
@@ -3116,6 +3116,7 @@ function removerObjeto(index) {
 }
 
 watch(clienteSelecionado, async (novoCliente) => {
+  // 🔥 LIMPA PRIMEIRO (some tudo da tela)
   objetoSelecionado.value = null
   objetosCliente.value = []
 
@@ -3125,7 +3126,9 @@ watch(clienteSelecionado, async (novoCliente) => {
     carregandoObjetos.value = true
 
     const res = await axios.get(`/clientes/${novoCliente}/objetos`)
-    objetosCliente.value = res.data
+
+    // 🔒 GARANTE ARRAY
+    objetosCliente.value = Array.isArray(res.data) ? res.data : []
   } catch (err) {
     console.error('Erro ao carregar objetos:', err)
     showToast('Erro ao carregar objetos do cliente', 3000)

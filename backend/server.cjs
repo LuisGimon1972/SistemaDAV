@@ -1346,9 +1346,11 @@ app.get('/clientes/:id/objetos', async (req, res) => {
       [id],
     )
 
-    res.json(rows)
+    // 🔹 SEM OBJETOS → array vazio
+    return res.json(rows || [])
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    console.error('Erro ao buscar objetos do cliente:', err)
+    return res.status(500).json({ error: err.message })
   }
 })
 
