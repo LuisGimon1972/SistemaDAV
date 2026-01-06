@@ -282,6 +282,7 @@
               @click="
                 () => {
                   ocultar()
+                  limparOs()
                   trocartituloOs()
                   cadastraros = true
                   menuAtivo = 'cadastrooser'
@@ -2783,24 +2784,23 @@ const editarOs = async (row) => {
 
   modoEdicao.value = true
   cadastraros.value = true
+  listagemos.value = false
   idOsEdicao.value = row.id
 
   clienteSelecionado.value = row.clienteid
 
   observacao.value = row.observacoes ?? ''
-  condicao.value = row.condicao ?? ''
+  condicao.value = row.laudo ?? ''
 
   desconto.value = Number(row.desconto) || 0
   acrescimo.value = Number(row.acrescimo) || 0
   adiantamento.value = Number(row.adiantamento) || 0
-
+  totalGeral.value = Number(row.valortotal) || 0
   item.value.status = row.status || 'ABERTO'
-
   // 🚀 carregar itens (quando ativar)
   await carregarItensDaOs(row.id)
-
   atualizarTotaisOs()
-  desabilitarTudo.value = false
+  //desabilitarTudo.value = false
 }
 
 function formatarDataBR(data) {
@@ -2838,7 +2838,7 @@ async function carregarItensDaOs(id) {
     produtoid: item.produtoid,
     descricao: item.descricao ?? item.nome ?? '',
     quantidade: Number(item.quantidade) || 1,
-    valorunitario: Number(item.valorunit) || 0,
+    valorunitario: Number(item.valorunitario) || 0,
     total: Number(item.total) || 0,
   }))
 }

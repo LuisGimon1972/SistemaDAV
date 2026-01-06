@@ -1008,6 +1008,8 @@ app.get('/ordens', async (req, res) => {
       c.nome AS clientenome,        -- opcional (lista)
       os.dataabertura,
       os.status,
+      os.observacoes,
+      os.laudo,
       os.valortotalitem,
       os.desconto,
       os.acrescimo,
