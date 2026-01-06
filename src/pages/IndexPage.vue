@@ -2079,7 +2079,7 @@ function limparFormularioSer() {
   item.value.nome = ''
   item.value.tipo = ''
   item.value.categoria = ''
-  item.value.precovenda = 0
+  precovendaser.value = 0
   duracaoHhmm.value = ''
   duracao.value = null
   nomeser.value.focus()
@@ -2798,7 +2798,7 @@ const idOrcamentoEdicao = ref(null)
 const idOsEdicao = ref(null)
 
 const editarOrcamento = async (row) => {
-  //debugger
+  debugger
   if (row.status?.toLowerCase() === 'finalizado') {
     showToast('Este orçamento está Finalizado e não pode ser editado!', 2000)
     return
@@ -2863,7 +2863,6 @@ const editarOs = async (row) => {
 
   idOsEdicao.value = row.id
 
-  // 👇 1º seta cliente (dispara o watch)
   clienteSelecionado.value = row.clienteid
 
   observacao.value = row.observacoes ?? ''
@@ -2873,18 +2872,13 @@ const editarOs = async (row) => {
   acrescimo.value = Number(row.acrescimo) || 0
   adiantamento.value = Number(row.adiantamento) || 0
   totalGeral.value = Number(row.valortotal) || 0
-  //desabilitarTudo.value = false
-
   item.value.status = row.status || 'ABERTO'
 
-  // 👇 2º ESPERA os objetos carregarem
   await nextTick()
   await aguardarObjetos()
 
-  // 👇 3º agora sim seleciona o veículo
   objetoSelecionado.value = row.objetoveiculoid
 
-  // 👇 4º carrega itens
   await carregarItensDaOs(row.id)
   atualizarTotaisOs()
 }
