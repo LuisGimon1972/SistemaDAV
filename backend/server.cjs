@@ -262,22 +262,28 @@ app.put('/clientes/:id', async (req, res) => {
     const idsDb = objetosDb.map((o) => o.id)
 
     /* ============================
-       🔹 4) DESATIVA REMOVIDOS
-       (somente se houve edição real)
-       ============================ */
-    if (idsPayload.length > 0) {
-      const idsRemover = idsDb.filter((id) => !idsPayload.includes(id))
+   🔹 4) DESATIVA REMOVIDOS
+   ============================ */
 
-      if (idsRemover.length > 0) {
-        await client.query(
-          `
-          UPDATE objetosveiculos
-          SET ativo = 'NAO'
-          WHERE id = ANY($1)
-          `,
-          [idsRemover],
-        )
-      }
+    let idsRemover = []
+
+    if (idsPayload.length === 0) {
+      // 🔥 Remove TODOS os objetos ativos
+      idsRemover = idsDb
+    } else {
+      // 🔹 Remove apenas os que não vieram no payload
+      idsRemover = idsDb.filter((id) => !idsPayload.includes(id))
+    }
+
+    if (idsRemover.length > 0) {
+      await client.query(
+        `
+    UPDATE objetosveiculos
+    SET ativo = 'NAO'
+    WHERE id = ANY($1)
+    `,
+        [idsRemover],
+      )
     }
 
     /* ============================
@@ -1497,9 +1503,11 @@ app.get('/clientes/:id/objetos', async (req, res) => {
         marca,
         modelo,
         ano,
+        cor,
         placaserie,
         numeroserie,
-        status
+        status,
+        observacoes
       FROM objetosveiculos
       WHERE clienteid = $1
         AND ativo = 'SIM'
