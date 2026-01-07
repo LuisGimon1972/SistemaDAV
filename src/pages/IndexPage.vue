@@ -986,12 +986,12 @@
                 <q-btn
                   icon="delete"
                   color="negative"
-                  dense
                   flat
-                  @click="removerObjeto(props.rowIndex)"
+                  @click="removerObjeto(props.row, props.rowIndex)"
                 />
               </q-td>
             </template>
+
             <template #no-data />
           </q-table>
         </div>
@@ -2891,7 +2891,7 @@ const editarOs = async (row) => {
   desconto.value = Number(row.desconto) || 0
   acrescimo.value = Number(row.acrescimo) || 0
   adiantamento.value = Number(row.adiantamento) || 0
-  totalGeral.value = Number(row.valortotal) || 0
+  //totalGeral.value = Number(row.valortotal) || 0
   item.value.status = row.status || 'ABERTO'
   await nextTick()
   await aguardarObjetos()
@@ -3138,7 +3138,7 @@ const objetoForm = ref({
   modelo: '',
   ano: '',
   cor: '',
-  placaSerie: '',
+  placaserie: '',
   observacoes: '',
 })
 
@@ -3151,15 +3151,37 @@ function adicionarObjeto() {
     modelo: '',
     ano: '',
     cor: '',
-    placaSerie: '',
+    placaserie: '',
     observacoes: '',
   }
 
   Notify.create({ type: 'positive', message: 'Objeto adicionado' })
 }
 
-function removerObjeto(index) {
-  objetos.value.splice(index, 1)
+async function removerObjeto(objeto, index) {
+  // objeto novo (ainda não salvo)
+  if (!objeto.id) {
+    objetos.value.splice(index, 1)
+    return
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/objetosveiculos/${objeto.id}/pode-apagar`)
+
+    const data = await res.json()
+
+    if (!res.ok || data.permitido === false) {
+      console.log('Bloqueado:', data.mensagem)
+      showToast(data.mensagem, 4000)
+      return // ⛔ NÃO remove da tela
+    }
+
+    // ✅ permitido → remove
+    objetos.value.splice(index, 1)
+  } catch (err) {
+    console.error(err)
+    showToast('Erro ao validar objeto', 3000)
+  }
 }
 
 watch(clienteSelecionado, async (novoCliente) => {
@@ -3179,19 +3201,19 @@ watch(clienteSelecionado, async (novoCliente) => {
 })
 
 function formatarPlacaSerie() {
-  if (!objetoForm.value.placaSerie) return
+  if (!objetoForm.value.placaserie) return
 
-  let v = objetoForm.value.placaSerie.toUpperCase().replace(/[^A-Z0-9]/g, '')
+  let v = objetoForm.value.placaserie.toUpperCase().replace(/[^A-Z0-9]/g, '')
 
   // Placa antiga: ABC1234 → ABC-1234
   if (/^[A-Z]{3}\d{4}$/.test(v)) {
-    objetoForm.value.placaSerie = v.replace(/^([A-Z]{3})(\d{4})$/, '$1-$2')
+    objetoForm.value.placaserie = v.replace(/^([A-Z]{3})(\d{4})$/, '$1-$2')
     return
   }
 
   // Mercosul: ABC1D23 → mantém
   if (/^[A-Z]{3}\d[A-Z]\d{2}$/.test(v)) {
-    objetoForm.value.placaSerie = v
+    objetoForm.value.placaserie = v
     return
   }
 

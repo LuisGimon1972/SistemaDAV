@@ -155,7 +155,7 @@ app.post('/clientes', async (req, res) => {
           obj.modelo || null,
           obj.ano || null,
           obj.cor || null,
-          obj.placaSerie || null,
+          obj.placaserie || null,
           obj.observacoes || null,
           'SIM',
         ])
@@ -182,6 +182,38 @@ app.post('/clientes', async (req, res) => {
     res.status(500).json({ erro: err.message })
   } finally {
     client.release()
+  }
+})
+
+app.get('/objetosveiculos/:id/pode-apagar', async (req, res) => {
+  const objetoId = Number(req.params.id)
+
+  try {
+    const { rowCount } = await pool.query(
+      `
+      SELECT 1
+      FROM ordemservico
+      WHERE objetoveiculoid = $1
+        AND status NOT IN ('FINALIZADA', 'CANCELADA')
+      LIMIT 1
+      `,
+      [objetoId],
+    )
+
+    if (rowCount > 0) {
+      return res.status(409).json({
+        permitido: false,
+        mensagem: 'Este objeto possui Ordem de Serviço ativa e não pode ser removido.',
+      })
+    }
+
+    res.json({
+      permitido: true,
+      mensagem: 'Objeto pode ser removido.',
+    })
+  } catch (err) {
+    console.error('Erro validação objeto:', err)
+    res.status(500).json({ mensagem: err.message })
   }
 })
 
@@ -310,7 +342,7 @@ app.put('/clientes/:id', async (req, res) => {
           obj.modelo ?? null,
           obj.ano ?? null,
           obj.cor ?? null,
-          obj.placaSerie ?? null,
+          obj.placaserie ?? null,
           obj.observacoes ?? null,
           obj.id,
           clienteid,
@@ -344,7 +376,7 @@ app.put('/clientes/:id', async (req, res) => {
           obj.modelo ?? null,
           obj.ano ?? null,
           obj.cor ?? null,
-          obj.placaSerie ?? null,
+          obj.placaserie ?? null,
           obj.observacoes ?? null,
         ],
       )
