@@ -15,7 +15,7 @@ export async function buscarOrcamento(id) {
 export function gerarTextoCupom(orc) {
   const numero = orc?.numero ?? '-'
   const cliente = orc?.clientenome ?? '-'
-  const clientecpf = orc?.clientecpf ?? '-' 
+  const clientecpf = orc?.clientecpf ?? '-'
   const data = formatarData(orc?.datacriacao, true)
   const validade = orc?.validade
   const status = orc?.status ?? '-'
@@ -101,4 +101,104 @@ function formatarData(valor, comHora = false) {
       hour12: false,
     }),
   }).format(d)
+}
+
+export async function imprimirOsPorId(id) {
+  const dados = await buscarOs(id)
+  const texto = gerarTextoCupomOs(dados)
+  imprimirTexto(texto)
+}
+
+export async function buscarOs(id) {
+  const res = await fetch(`http://localhost:3000/ordemservico-detalhe/${id}`)
+  if (!res.ok) {
+    throw new Error('Erro ao buscar ordem de serviço')
+  }
+  return await res.json()
+}
+
+export function gerarTextoCupomOs(os) {
+  const numero = os?.numeroos ?? '-'
+  const cliente = os?.clientenome ?? '-'
+  const cpf = os?.clientecpf ?? '-'
+  const data = formatarData(os?.dataabertura, true)
+  const status = os?.status ?? '-'
+  const objeto = os?.objeto ?? '-'
+  const placa = os?.placaserie ?? '-'
+
+  /* ============================
+     🔹 ITENS (PRODUTO / SERVIÇO)
+     ============================ */
+  const itens =
+    Array.isArray(os?.itens) && os.itens.length
+      ? os.itens
+          .map((i) => {
+            const desc = (i.descricao ?? '').padEnd(15).slice(0, 12)
+            const qtd = String(i.quantidade ?? 1).padStart(3)
+            const total = Number(i.total ?? 0)
+              .toFixed(2)
+              .padStart(8)
+            const tipo = i.tipoitem === 'SERVIÇO' ? 'S' : 'P'
+            const tecnico = i.tecnico ? ` (${i.tecnico})` : ''
+
+            return `${desc.padEnd(12)} ${qtd} ${tipo} R$ ${total}${tecnico}`
+          })
+          .join('\n')
+      : 'Nenhum item'
+
+  /* ============================
+     🔹 TOTAIS
+     ============================ */
+  const largura = 17
+
+  const totalItens = Number(os?.valortotalitem ?? 0)
+    .toFixed(2)
+    .padStart(largura)
+
+  const totalServicos = Number(os?.valortotalserv ?? 0)
+    .toFixed(2)
+    .padStart(largura)
+
+  const desconto = Number(os?.desconto ?? 0)
+    .toFixed(2)
+    .padStart(largura)
+
+  const acrescimo = Number(os?.acrescimo ?? 0)
+    .toFixed(2)
+    .padStart(largura)
+
+  const total = Number(os?.valortotal ?? 0)
+    .toFixed(2)
+    .padStart(largura)
+
+  return `
+================================
+    ORDEM DE SERVIÇO Nº ${numero}
+================================
+STATUS : ${status}
+DATA   : ${data}
+________________________________
+
+CLIENTE: ${cliente}
+CPF: ${cpf}
+OBJETO: ${objeto}
+PLACA/SERIE: ${placa}
+================================
+ITEM          QTD T      TOTAL
+================================
+${itens}
+________________________________
+PRODUTOS:   R$ ${totalItens}
+SERVIÇOS:   R$ ${totalServicos}
+DESCONTO:   R$ ${desconto}
+ACRÉSCIMO:  R$ ${acrescimo}
+TOTAL:      R$ ${total}
+________________________________
+
+ Assinatura do Cliente:
+
+ _______________________________
+
+   Obrigado pela preferência!
+`
 }

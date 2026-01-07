@@ -1375,6 +1375,91 @@ app.post('/ordens', async (req, res) => {
   }
 })
 
+app.get('/ordemservico-detalhe/:id', async (req, res) => {
+  const { id } = req.params
+
+  try {
+    /* ============================
+       🔹 1) DADOS DA OS + CLIENTE + OBJETO
+       ============================ */
+    const sqlOs = `
+      SELECT
+        os.id,
+        os.numeroos,
+        os.laudo,
+        os.dataabertura,
+        os.datafinalizacao,
+        os.status,
+        os.descricao,
+        os.observacoes,
+        os.garantia,
+        os.desconto,
+        os.acrescimo,
+        os.valortotalitem,
+        os.valortotalserv,
+        os.valortotal,
+        os.formapagamento,
+        os.adiantamento,
+
+        -- Cliente
+        c.nome      AS clientenome,
+        c.cpf       AS clientecpf,
+        c.endereco  AS clienteendereco,
+        c.telefone  AS clientetelefone,
+        c.celular   AS clientecelular,
+        c.email     AS clienteemail,
+
+        -- Objeto / Veículo
+        ov.tipo        AS objeto,
+        ov.marca,
+        ov.modelo,
+        ov.ano,
+        ov.cor,
+        ov.placaserie
+      FROM ordemservico os
+      LEFT JOIN clientes c ON c.id = os.clienteid
+      LEFT JOIN objetosveiculos ov ON ov.id = os.objetoveiculoid
+      WHERE os.id = $1
+    `
+
+    const osResult = await pool.query(sqlOs, [id])
+
+    if (osResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Ordem de serviço não encontrada' })
+    }
+
+    const os = osResult.rows[0]
+
+    /* ============================
+       🔹 2) ITENS DA OS
+       ============================ */
+    const itensResult = await pool.query(
+      `
+      SELECT
+        id,
+        descricao,
+        tipoitem,
+        quantidade,
+        valorunitario,
+        total,
+        tecnico
+      FROM itensordemservico
+      WHERE ordemservicoid = $1
+      ORDER BY id
+      `,
+      [id],
+    )
+
+    res.json({
+      ...os,
+      itens: itensResult.rows,
+    })
+  } catch (err) {
+    console.error('ERRO GET /ordemservico-detalhe:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
 app.put('/ordens/:id', async (req, res) => {
   const { id } = req.params
   const client = await pool.connect()

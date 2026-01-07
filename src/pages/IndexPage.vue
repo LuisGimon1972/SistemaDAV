@@ -1202,7 +1202,12 @@
 
                 <q-btn size="sm" color="blue" icon="visibility" @click="verOs(props.row)" />
 
-                <q-btn size="sm" color="positive" icon="print" @click="imprimirOs(props.row.id)" />
+                <q-btn
+                  size="sm"
+                  color="positive"
+                  icon="print"
+                  @click="imprimirOrdem(props.row.id)"
+                />
               </q-td>
             </template>
           </q-table>
@@ -1515,7 +1520,7 @@
 <script setup>
 import logo from 'src/assets/logo.png'
 import usuario from 'src/assets/usuario.png'
-import { imprimirOrcamentoPorId } from 'src/utils/impressao.js'
+import { imprimirOrcamentoPorId, imprimirOsPorId } from 'src/utils/impressao.js'
 import { ref, onMounted, watch, nextTick } from 'vue'
 import novoCliente from 'src/models/Cliente'
 import novoItem from 'src/models/Item'
@@ -2511,6 +2516,10 @@ function imprimirOrcamento(id) {
   imprimirOrcamentoPorId(id)
 }
 
+function imprimirOrdem(id) {
+  imprimirOsPorId(id)
+}
+imprimirOsPorId
 function abrirRelatorioPeriodo() {
   dialogRelatorioPeriodo.value = true
 }
