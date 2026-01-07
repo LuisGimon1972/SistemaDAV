@@ -3187,11 +3187,16 @@ async function removerObjeto(objeto, index) {
 watch(clienteSelecionado, async (novoCliente) => {
   objetoSelecionado.value = null
   objetosCliente.value = []
+
   if (!novoCliente) return
+
   try {
     carregandoObjetos.value = true
     const res = await axios.get(`/clientes/${novoCliente}/objetos`)
     objetosCliente.value = Array.isArray(res.data) ? res.data : []
+    if (objetosCliente.value.length === 0) {
+      showToast('Este cliente não possui objetos cadastrados!', 3000)
+    }
   } catch (err) {
     console.error('Erro ao carregar objetos:', err)
     showToast('Erro ao carregar objetos do cliente', 3000)
