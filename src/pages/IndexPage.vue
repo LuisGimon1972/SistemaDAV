@@ -955,6 +955,7 @@
                 />
               </q-td>
             </template>
+            <template #no-data />
           </q-table>
         </div>
 
@@ -1828,8 +1829,7 @@ async function salvarCliente() {
     limparFormulario()
     carregarClientes()
   } else {
-
-  /* =========================
+    /* =========================
      🔹 ATUALIZA CLIENTE (PUT)
      ========================= */
     await fetch(`${API_URL}/clientes/${cliente.value.id}`, {
@@ -1879,8 +1879,17 @@ async function excluirCliente(id) {
   })
 }
 
-function editarCliente(c) {
+async function editarCliente(c) {
+  // 1️⃣ carrega dados do cliente
   cliente.value = { ...c }
+
+  // 2️⃣ busca objetos do cliente no backend
+  const res = await fetch(`${API_URL}/clientes/${c.id}/objetos`)
+  objetos.value = await res.json()
+
+  // 3️⃣ controla telas
+  //mostrarCadastro.value = false
+  // mostrarFormObjetos.value = true
 }
 
 function editarServico(i) {

@@ -224,22 +224,32 @@ app.put('/clientes/:id', async (req, res) => {
       [
         cpf,
         nome,
-        fantasia || null,
-        endereco || null,
-        cep || null,
-        bairro || null,
-        email || null,
-        telefone || null,
-        celular || null,
-        limite || 0,
+        fantasia ?? null,
+        endereco ?? null,
+        cep ?? null,
+        bairro ?? null,
+        email ?? null,
+        telefone ?? null,
+        celular ?? null,
+        limite ?? 0,
         clienteid,
       ],
     )
 
     /* ============================
-       🔹 2) BUSCA OBJETOS ATIVOS
+       🔹 2) NORMALIZA PAYLOAD
        ============================ */
-    const objetosDb = await client.query(
+    const objetosPayload = Array.isArray(objetos) ? objetos : []
+
+    const objetosComId = objetosPayload.filter((o) => Number.isInteger(o.id))
+    const objetosSemId = objetosPayload.filter((o) => !Number.isInteger(o.id))
+
+    const idsPayload = objetosComId.map((o) => o.id)
+
+    /* ============================
+       🔹 3) BUSCA OBJETOS ATIVOS
+       ============================ */
+    const { rows: objetosDb } = await client.query(
       `
       SELECT id
       FROM objetosveiculos
@@ -249,18 +259,11 @@ app.put('/clientes/:id', async (req, res) => {
       [clienteid],
     )
 
-    const idsDb = objetosDb.rows.map((o) => o.id)
+    const idsDb = objetosDb.map((o) => o.id)
 
     /* ============================
-       🔹 3) SEPARA PAYLOAD
-       ============================ */
-    const objetosPayload = Array.isArray(objetos) ? objetos : []
-
-    const idsPayload = objetosPayload.filter((o) => Number.isInteger(o.id)).map((o) => o.id)
-
-    /* ============================
-       🔹 4) DESATIVA SOMENTE
-       SE HOUVER REMOÇÃO REAL
+       🔹 4) DESATIVA REMOVIDOS
+       (somente se houve edição real)
        ============================ */
     if (idsPayload.length > 0) {
       const idsRemover = idsDb.filter((id) => !idsPayload.includes(id))
@@ -278,68 +281,67 @@ app.put('/clientes/:id', async (req, res) => {
     }
 
     /* ============================
-       🔹 5) INSERE / ATUALIZA
+       🔹 5) ATUALIZA EXISTENTES
        ============================ */
-    for (const obj of objetosPayload) {
-      // 🔄 UPDATE
-      if (Number.isInteger(obj.id)) {
-        await client.query(
-          `
-          UPDATE objetosveiculos SET
-            tipo = $1,
-            marca = $2,
-            modelo = $3,
-            ano = $4,
-            cor = $5,
-            placaserie = $6,
-            observacoes = $7,
-            ativo = 'SIM'
-          WHERE id = $8
-            AND clienteid = $9
-          `,
-          [
-            obj.tipo || 'OUTRO',
-            obj.marca || null,
-            obj.modelo || null,
-            obj.ano || null,
-            obj.cor || null,
-            obj.placaSerie || null,
-            obj.observacoes || null,
-            obj.id,
-            clienteid,
-          ],
-        )
-      }
+    for (const obj of objetosComId) {
+      await client.query(
+        `
+        UPDATE objetosveiculos SET
+          tipo = $1,
+          marca = $2,
+          modelo = $3,
+          ano = $4,
+          cor = $5,
+          placaserie = $6,
+          observacoes = $7,
+          ativo = 'SIM'
+        WHERE id = $8
+          AND clienteid = $9
+        `,
+        [
+          obj.tipo ?? 'OUTRO',
+          obj.marca ?? null,
+          obj.modelo ?? null,
+          obj.ano ?? null,
+          obj.cor ?? null,
+          obj.placaSerie ?? null,
+          obj.observacoes ?? null,
+          obj.id,
+          clienteid,
+        ],
+      )
+    }
 
-      // ➕ INSERT
-      else {
-        await client.query(
-          `
-          INSERT INTO objetosveiculos (
-            clienteid,
-            tipo,
-            marca,
-            modelo,
-            ano,
-            cor,
-            placaserie,
-            observacoes,
-            ativo
-          )
-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'SIM')
-          `,
-          [
-            clienteid,
-            obj.tipo || 'OUTRO',
-            obj.marca || null,
-            obj.modelo || null,
-            obj.ano || null,
-            obj.cor || null,
-            obj.placaSerie || null,
-            obj.observacoes || null,
-          ],
+    /* ============================
+       🔹 6) INSERE NOVOS
+       ============================ */
+    for (const obj of objetosSemId) {
+      await client.query(
+        `
+        INSERT INTO objetosveiculos (
+          clienteid,
+          tipo,
+          marca,
+          modelo,
+          ano,
+          cor,
+          placaserie,
+          observacoes,
+          ativo
         )
-      }
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'SIM')
+        `,
+        [
+          clienteid,
+          obj.tipo ?? 'OUTRO',
+          obj.marca ?? null,
+          obj.modelo ?? null,
+          obj.ano ?? null,
+          obj.cor ?? null,
+          obj.placaSerie ?? null,
+          obj.observacoes ?? null,
+        ],
+      )
     }
 
     await client.query('COMMIT')
