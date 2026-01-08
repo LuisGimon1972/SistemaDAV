@@ -1153,33 +1153,43 @@
             title-class="text-h4 text-primary q-pa-md"
             :pagination="{ page: 1, rowsPerPage: 14 }"
           >
-            <template v-slot:body-cell-acoes="props">
-              <q-td align="center">
-                <q-btn
-                  size="sm"
-                  color="warning"
-                  icon="edit"
-                  @click="((entrarOrcamento = true), editarOrcamento(props.row))"
-                />
-                <q-btn
-                  size="sm"
-                  color="negative"
-                  icon="delete"
-                  @click="excluirOrcamento(props.row.id)"
-                />
-                <q-btn
-                  size="sm"
-                  color="blue"
-                  icon="visibility"
-                  @click="((entrarOrcamento = true), verOrcamento(props.row))"
-                />
-                <q-btn
-                  size="sm"
-                  color="positive"
-                  icon="print"
-                  @click="imprimirOrcamento(props.row.id)"
-                />
-              </q-td>
+            <template v-slot:body="props">
+              <q-tr :props="props" :class="rowClassOrcamento(props.row)">
+                <q-td v-for="col in props.cols" :key="col.name" :props="props">
+                  <!-- AÇÕES -->
+                  <template v-if="col.name === 'acoes'">
+                    <q-btn
+                      size="sm"
+                      color="warning"
+                      icon="edit"
+                      @click="((entrarOrcamento = true), editarOrcamento(props.row))"
+                    />
+                    <q-btn
+                      size="sm"
+                      color="negative"
+                      icon="delete"
+                      @click="excluirOrcamento(props.row.id)"
+                    />
+                    <q-btn
+                      size="sm"
+                      color="blue"
+                      icon="visibility"
+                      @click="((entrarOrcamento = true), verOrcamento(props.row))"
+                    />
+                    <q-btn
+                      size="sm"
+                      color="positive"
+                      icon="print"
+                      @click="imprimirOrcamento(props.row.id)"
+                    />
+                  </template>
+
+                  <!-- OUTRAS COLUNAS -->
+                  <template v-else>
+                    {{ col.value }}
+                  </template>
+                </q-td>
+              </q-tr>
             </template>
           </q-table>
         </div>
@@ -2069,6 +2079,21 @@ function navegarLista(event) {
     } else {
       buscarItem()
     }
+  }
+}
+
+function rowClassOrcamento(row) {
+  if (!row || !row.status) return ''
+
+  switch (row.status) {
+    case 'EM NEGOCIAÇÃO':
+      return 'bg-green-1'
+
+    case 'FINALIZADO':
+      return 'bg-green-3'
+
+    default:
+      return ''
   }
 }
 
