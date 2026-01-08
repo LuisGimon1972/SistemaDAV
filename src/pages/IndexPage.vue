@@ -677,7 +677,7 @@
           <q-input
             v-model="buscaItem"
             label="Buscar item"
-            @keyup="navegarLista"
+            @keyup="navegarListaOs"
             class="input-grande"
           >
             <template #append>
@@ -3106,6 +3106,36 @@ function aguardarObjetos() {
       }
     })
   })
+}
+
+function navegarListaOs(event) {
+  if (event.key === 'Enter') {
+    if (itemSelecionado.value < 0) {
+      buscarItem()
+    } else {
+      adicionarItemOs(resultadoBusca.value[itemSelecionado.value])
+    }
+    return
+  }
+  const total = resultadoBusca.value.length
+
+  if (total === 0) return
+
+  if (event.key === 'ArrowDown') {
+    itemSelecionado.value = (itemSelecionado.value + 1) % total
+  }
+
+  if (event.key === 'ArrowUp') {
+    itemSelecionado.value = (itemSelecionado.value - 1 + total) % total
+  }
+
+  if (event.key === 'Enter') {
+    if (itemSelecionado.value >= 0) {
+      adicionarItemOs(resultadoBusca.value[itemSelecionado.value])
+    } else {
+      buscarItem()
+    }
+  }
 }
 
 async function carregarItensDaOs(id) {
