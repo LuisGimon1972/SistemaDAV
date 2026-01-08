@@ -2160,6 +2160,7 @@ watch(acrescimo, () => {
 })
 
 async function salvarOrcamento() {
+  debugger
   if (!clienteSelecionado.value) {
     showToast('Selecione um cliente!', 3000)
     return
@@ -2406,7 +2407,7 @@ const modoEdicao = ref(false)
 const idOrcamentoEdicao = ref(null)
 
 const editarOrcamento = async (row) => {
-  debugger
+  // debugger
   if (row.status?.toLowerCase() === 'finalizado') {
     showToast('Este orçamento está Finalizado e não pode ser editado!', 2000)
     return
@@ -2418,7 +2419,7 @@ const editarOrcamento = async (row) => {
   listarOrcamento.value = false
   idOrcamentoEdicao.value = row.id
   clienteSelecionado.value = row.clienteid
-  validade.value = formatarDataBR(row.validade)
+  validade.value = row.validade
   observacao.value = row.observacoes || ''
   condicao.value = row.condicao || ''
   desconto.value = row.desconto || 0
@@ -2477,33 +2478,61 @@ async function carregarItensDoOrcamento(id) {
 }
 
 async function salvarEdicao() {
+  if (!idOrcamentoEdicao.value) {
+    showToast('Orçamento inválido para edição')
+    return
+  }
+
   const dados = {
     clienteId: clienteSelecionado.value,
     validade: validade.value,
     observacoes: observacao.value,
+    status: item.value.status,
     condicao: condicao.value,
-    desconto: desconto.value,
-    acrescimo: acrescimo.value.toFixed(2),
+    desconto: Number(desconto.value) || 0,
+    acrescimo: Number(acrescimo.value) || 0,
     itens: itensOrcamento.value,
   }
 
-  const res = await fetch(`${API_URL}/orcamentos/${idOrcamentoEdicao.value}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(dados),
-  })
+  try {
+    const res = await fetch(`${API_URL}/orcamentos/${idOrcamentoEdicao.value}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dados),
+    })
 
-  const resultado = await res.json()
+    const resultado = await parseJsonSeguro(res)
 
-  if (resultado.success) {
-    ocultar()
-    listarOrcamento.value = true
-    carregarOrcamento()
-  } else {
-    showToast('Erro ao atualizar orçamento!')
+    if (resultado.success || resultado.sucesso) {
+      idOrcamentoEdicao.value = null
+      ocultar()
+      listarOrcamento.value = true
+      carregarOrcamento()
+    } else {
+      showToast('Erro ao atualizar orçamento')
+    }
+
+    finalizarEdicao()
+  } catch (erro) {
+    console.error('Erro ao atualizar orçamento:', erro)
+    showToast(erro.message || 'Erro ao atualizar orçamento')
   }
+}
+
+async function parseJsonSeguro(res) {
+  try {
+    return await res.json()
+  } catch {
+    return {}
+  }
+}
+
+function finalizarEdicao() {
+  idOrcamentoEdicao.value = null
+  ocultar()
+  listarOrcamento.value = true
+  carregarOrcamento()
+  showToastv('Orçamento atualizado com sucesso')
 }
 
 function abrirCalendario() {
@@ -2812,6 +2841,7 @@ async function salvarServico() {
 }
 
 async function salvarOrdem() {
+  debugger
   if (!clienteSelecionado.value) {
     showToast('Selecione um cliente!', 3000)
     return
@@ -3103,6 +3133,7 @@ function limparFormularioSer() {
 }
 
 async function salvarEdicaoOs() {
+  debugger
   const dados = {
     clienteid: clienteSelecionado.value,
     status: item.value.status,
