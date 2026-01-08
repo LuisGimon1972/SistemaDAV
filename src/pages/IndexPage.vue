@@ -660,6 +660,7 @@
                     : ''
               "
               label="Selecione o objeto / veículo"
+              clearable
               emit-value
               map-options
               :disable="!clienteSelecionado || objetosCliente.length === 0"
@@ -1194,21 +1195,33 @@
             title-class="text-h4 text-primary q-pa-md"
             :pagination="{ page: 1, rowsPerPage: 14 }"
           >
-            <template v-slot:body-cell-acoes="props">
-              <q-td align="center">
-                <q-btn size="sm" color="warning" icon="edit" @click="editarOs(props.row)" />
+            <template v-slot:body="props">
+              <q-tr :props="props" :class="rowClassOs(props.row)">
+                <q-td v-for="col in props.cols" :key="col.name" :props="props">
+                  <!-- AÇÕES -->
+                  <template v-if="col.name === 'acoes'">
+                    <q-btn size="sm" color="warning" icon="edit" @click="editarOs(props.row)" />
+                    <q-btn
+                      size="sm"
+                      color="negative"
+                      icon="delete"
+                      @click="excluirOs(props.row.id)"
+                    />
+                    <q-btn size="sm" color="blue" icon="visibility" @click="verOs(props.row)" />
+                    <q-btn
+                      size="sm"
+                      color="positive"
+                      icon="print"
+                      @click="imprimirOrdem(props.row.id)"
+                    />
+                  </template>
 
-                <q-btn size="sm" color="negative" icon="delete" @click="excluirOs(props.row.id)" />
-
-                <q-btn size="sm" color="blue" icon="visibility" @click="verOs(props.row)" />
-
-                <q-btn
-                  size="sm"
-                  color="positive"
-                  icon="print"
-                  @click="imprimirOrdem(props.row.id)"
-                />
-              </q-td>
+                  <!-- OUTRAS COLUNAS -->
+                  <template v-else>
+                    {{ col.value }}
+                  </template>
+                </q-td>
+              </q-tr>
             </template>
           </q-table>
         </div>
@@ -3217,6 +3230,28 @@ function adicionarObjeto() {
   }
 
   Notify.create({ type: 'positive', message: 'Objeto adicionado' })
+}
+
+function rowClassOs(row) {
+  if (!row || !row.status) return ''
+  switch (row.status) {
+    case 'EM ANDAMENTO':
+      return 'bg-orange-3'
+    case 'PRONTA':
+      return 'bg-green-1'
+    case 'PENDENTE':
+      return 'bg-yellow-2'
+    case 'LIBERADA':
+      return 'bg-green-2'
+    case 'FINALIZADA':
+      return 'bg-green-3'
+    case 'ORÇAMENTO':
+      return 'bg-grey-4'
+    case 'CANCELADA':
+      return 'bg-red-3'
+    default:
+      return ''
+  }
 }
 
 async function removerObjeto(objeto, index) {
