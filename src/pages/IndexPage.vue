@@ -3101,7 +3101,7 @@ async function limparOs() {
 
 function excluirOs(id) {
   Notify.create({
-    message: 'Tem certeza que deseja excluir esse Orçamento?',
+    message: 'Tem certeza que deseja excluir essa Ordem de Serviço?',
     caption: 'Essa ação não poderá ser desfeita.',
     color: 'blue-10',
     icon: 'warning',
@@ -3116,11 +3116,11 @@ function excluirOs(id) {
         color: 'red-6',
         handler: async () => {
           try {
-            await fetch(`${API_URL}/orcamentos/${id}`, {
+            await fetch(`${API_URL}/ordemservico/${id}`, {
               method: 'DELETE',
             })
-            showToastv(`Orçamento excluído com sucesso!`, 1500)
-            carregarOrcamento()
+            showToastv(`Ordem de Serviço excluída com sucesso!`, 1500)
+            listarOrdensServico()
           } catch (err) {
             console.error('Erro ao excluir orçamento:', err)
 

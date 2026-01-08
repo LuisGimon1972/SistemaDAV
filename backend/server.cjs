@@ -1407,6 +1407,48 @@ app.post('/ordens', async (req, res) => {
   }
 })
 
+app.delete('/ordemservico/:id', async (req, res) => {
+  const client = await pool.connect()
+  const { id } = req.params
+
+  try {
+    await client.query('BEGIN')
+
+    // 1️⃣ Verifica se a OS existe
+    const { rowCount } = await client.query('SELECT id FROM ordemservico WHERE id = $1', [id])
+
+    if (rowCount === 0) {
+      await client.query('ROLLBACK')
+      return res.status(404).json({
+        success: false,
+        error: 'Ordem de Serviço não encontrada',
+      })
+    }
+
+    // 2️⃣ Deleta itens vinculados à OS
+    await client.query('DELETE FROM itensordemservico WHERE ordemservicoid = $1', [id])
+
+    // 3️⃣ Deleta a Ordem de Serviço
+    const result = await client.query('DELETE FROM ordemservico WHERE id = $1', [id])
+
+    await client.query('COMMIT')
+
+    res.json({
+      success: true,
+      deleted: result.rowCount,
+    })
+  } catch (err) {
+    await client.query('ROLLBACK')
+    console.error('ERRO DELETE /ordemservico/:id', err)
+    res.status(500).json({
+      success: false,
+      error: err.message,
+    })
+  } finally {
+    client.release()
+  }
+})
+
 app.get('/ordemservico-detalhe/:id', async (req, res) => {
   const { id } = req.params
 
