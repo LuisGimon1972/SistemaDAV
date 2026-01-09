@@ -2175,7 +2175,7 @@ function atualizarTotais() {
     return acc + i.total
   }, 0)
 
-  const descontoMaximo = Math.max(0, subtotal - 0.01)
+  const descontoMaximo = Math.max(0, totalGeral.value - 0.01)
   if (entrarOrcamento.value == false) {
     if (desconto.value > descontoMaximo) {
       showToast('O desconto informado é maior que o permitido e foi reajustado!', 3000)
@@ -2989,6 +2989,7 @@ const editarOs = async (row) => {
   objetoSelecionado.value = row.objetoveiculoid
   await carregarItensDaOs(row.id)
   atualizarTotaisOs()
+  entrarOrcamento.value = false
 }
 
 const verOs = async (row) => {
@@ -3071,35 +3072,29 @@ function adicionarItemOs(item) {
 }
 
 function atualizarTotaisOs() {
-  const VALOR_MINIMO_FATURA = 0.01
-  let subtotal = itensOrdemos.value.reduce((acc, i) => {
+  const VALOR_MINIMO = 0.01
+
+  const subtotal = itensOrdemos.value.reduce((acc, i) => {
     i.total = Number(i.quantidade) * Number(i.valorunitario)
     return acc + i.total
   }, 0)
-  let descontoNum = Number(desconto.value) || 0
+
   let acrescimoNum = Number(acrescimo.value) || 0
+  let descontoNum = Number(desconto.value) || 0
   let adiantamentoNum = Number(adiantamento.value) || 0
-  if (!entrarOrcamento.value) {
-    const limiteTotal = subtotal - VALOR_MINIMO_FATURA
-    if (limiteTotal < 0) return
-    if (adiantamentoNum > limiteTotal) {
-      showToast('O adiantamento não pode zerar a fatura.', 3000)
-      adiantamentoNum = limiteTotal
-      adiantamento.value = adiantamentoNum.toFixed(2)
-    }
-    if (descontoNum + adiantamentoNum > limiteTotal) {
-      showToast('Desconto reajustado para manter valor mínimo da fatura.', 3000)
-      descontoNum = limiteTotal - adiantamentoNum
-      desconto.value = descontoNum.toFixed(2)
-      if (acrescimoRef.value) {
-        setTimeout(() => {
-          acrescimoRef.value.focus()
-        }, 50)
-      }
-    }
+
+  const totalBase = subtotal + acrescimoNum
+
+  // 🔒 Reajuste direto: desconto maior que total
+  if (descontoNum >= totalBase && !entrarOrcamento.value) {
+    descontoNum = totalBase - VALOR_MINIMO
+    desconto.value = descontoNum.toFixed(2)
+    showToast('Desconto reajustado para manter o valor mínimo da fatura.', 3000)
   }
-  let total = subtotal - adiantamentoNum - descontoNum + acrescimoNum
-  totalGeral.value = Math.max(VALOR_MINIMO_FATURA, total)
+
+  const totalFinal = totalBase - descontoNum - adiantamentoNum
+
+  totalGeral.value = Math.max(VALOR_MINIMO, totalFinal)
 }
 
 async function limparOs() {
