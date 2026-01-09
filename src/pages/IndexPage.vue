@@ -788,6 +788,7 @@
                 filled
                 v-model.number="desconto"
                 type="number"
+                @keyup.enter="atualizarTotaisOs"
                 label="Desconto (R$)"
                 class="label-grande"
                 @blur="atualizarTotaisOs"
@@ -798,6 +799,7 @@
                 filled
                 v-model.number="acrescimo"
                 type="number"
+                @keyup.enter="atualizarTotaisOs"
                 label="Acréscimo (R$)"
                 class="label-grande"
               />
@@ -808,6 +810,7 @@
                 filled
                 v-model.number="adiantamento"
                 type="number"
+                @keyup.enter="atualizarTotaisOs"
                 label="Adiantamento (R$)"
                 class="label-grande"
                 @blur="atualizarTotaisOs"
@@ -1080,9 +1083,15 @@
                         color="black"
                         class="w-1/3 dark-border"
                         v-model="cliente.email"
-                        @update:model-value="(val) => (cliente.email = val.toUpperCase())"
+                        @update:model-value="(val) => (cliente.email = val.toLowerCase())"
                         label="Email"
-                        maxlength="30"
+                        clearable
+                        lazy-rules
+                        :rules="[
+                          (val) => !!val || 'Campo obrigatório',
+                          (val) => /.+@.+\..+/.test(val) || 'E-mail inválido',
+                        ]"
+                        maxlength="100"
                       />
                     </div>
                   </div>
@@ -1593,6 +1602,7 @@ const resumoDividas = ref(false)
 const resultadoBusca = ref([])
 const buscaItem = ref('')
 const observacao = ref(null)
+const adiantamento = ref(0)
 const condicao = ref(null)
 const validade = ref(null)
 const menuAtivo = ref(null)
@@ -2183,7 +2193,7 @@ function atualizarTotais() {
 
 watch(desconto, () => {
   if (criarOrcamento.value) {
-    atualizarTotaisOs()
+    atualizarTotais()
   } else {
     atualizarTotaisOs()
   }
@@ -2191,11 +2201,25 @@ watch(desconto, () => {
 
 watch(acrescimo, () => {
   if (criarOrcamento.value) {
-    atualizarTotaisOs()
+    atualizarTotais()
   } else {
     atualizarTotaisOs()
   }
 })
+
+watch(adiantamento, () => {
+  atualizarTotaisOs()
+})
+
+/*function irParaAcrescimo() {
+  atualizarTotais()
+
+  if (acrescimoRef.value) {
+    setTimeout(() => {
+      acrescimoRef.value.focus()
+    }, 50)
+  }
+}*/
 
 async function salvarOrcamento() {
   debugger
@@ -2671,7 +2695,6 @@ const abrirRelatorioStatus = () => {
 //MÓDULO ORDEM DE SERVIÇO
 /////////////////////////
 
-const adiantamento = ref(0)
 const davmenuOs = ref(false)
 const ordensServico = ref([])
 const carregandoOs = ref(false)
@@ -3068,6 +3091,11 @@ function atualizarTotaisOs() {
       showToast('Desconto reajustado para manter valor mínimo da fatura.', 3000)
       descontoNum = limiteTotal - adiantamentoNum
       desconto.value = descontoNum.toFixed(2)
+      if (acrescimoRef.value) {
+        setTimeout(() => {
+          acrescimoRef.value.focus()
+        }, 50)
+      }
     }
   }
   let total = subtotal - adiantamentoNum - descontoNum + acrescimoNum
