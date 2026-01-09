@@ -1548,6 +1548,7 @@ app.put('/ordens/:id', async (req, res) => {
       desconto = 0,
       acrescimo = 0,
       adiantamento = 0,
+      valortotal = 0,
       itens,
     } = req.body
 
@@ -1573,8 +1574,9 @@ app.put('/ordens/:id', async (req, res) => {
         laudo = $5,
         desconto = $6,
         acrescimo = $7,
-        adiantamento = $8
-      WHERE id = $9
+        adiantamento = $8,
+        valortotal = $9
+      WHERE id = $10
       `,
       [
         clienteid,
@@ -1585,6 +1587,7 @@ app.put('/ordens/:id', async (req, res) => {
         Number(desconto),
         Number(acrescimo),
         Number(adiantamento),
+        Number(valortotal),
         id,
       ],
     )

@@ -3234,6 +3234,7 @@ async function salvarEdicaoOs() {
     desconto: Number(desconto.value) || 0,
     acrescimo: Number(acrescimo.value) || 0,
     adiantamento: Number(adiantamento.value) || 0,
+    valortotal: Number(totalGeral.value) || 0,
     itens: itensOrdemos.value,
   }
   console.log('PUT OS:', dados)
