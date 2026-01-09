@@ -3306,16 +3306,28 @@ async function removerObjeto(objeto, index) {
 }
 
 watch(clienteSelecionado, async (novoCliente) => {
+  debugger
   objetoSelecionado.value = null
   objetosCliente.value = []
 
   if (!novoCliente) return
 
+  carregandoObjetos.value = true
+
   try {
-    carregandoObjetos.value = true
-    const res = await axios.get(`/clientes/${novoCliente}/objetos`)
+    const statusOs = item.value.status
+
+    const usarRotaCompleta = statusOs === 'CANCELADA' || statusOs === 'FINALIZADA'
+
+    const url = usarRotaCompleta
+      ? `/clientesos/${novoCliente}/objetos`
+      : `/clientes/${novoCliente}/objetos`
+
+    const res = await axios.get(url)
     objetosCliente.value = Array.isArray(res.data) ? res.data : []
-    if (objetosCliente.value.length === 0) {
+
+    // 🔹 Aviso somente quando NÃO for cancelada nem finalizada
+    if (!usarRotaCompleta && objetosCliente.value.length === 0) {
       showToast('Este cliente não possui objetos cadastrados!', 3000)
     }
   } catch (err) {

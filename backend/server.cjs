@@ -1683,6 +1683,46 @@ app.get('/clientes/:id/objetos', async (req, res) => {
   }
 })
 
+app.get('/clientesos/:id/objetos', async (req, res) => {
+  const { id } = req.params
+  const { status } = req.query // ATIVO | INATIVO | TODOS
+
+  try {
+    let sql = `
+      SELECT
+        id,
+        tipo,
+        marca,
+        modelo,
+        ano,
+        cor,
+        placaserie,
+        numeroserie,
+        status,
+        observacoes
+      FROM objetosveiculos
+      WHERE clienteid = $1
+    `
+
+    const params = [id]
+
+    // 🔹 Filtra por status se informado
+    if (status && status !== 'TODOS') {
+      sql += ' AND status = $2'
+      params.push(status)
+    }
+
+    sql += ' ORDER BY tipo, marca, modelo'
+
+    const { rows } = await pool.query(sql, params)
+
+    return res.json(rows || [])
+  } catch (err) {
+    console.error('Erro ao buscar objetos do cliente:', err)
+    return res.status(500).json({ error: err.message })
+  }
+})
+
 // ==========================================
 //  INICIAR SERVIDOR
 // ==========================================
