@@ -127,6 +127,7 @@
                   desabilitarTudo = false
                   idOrcamentoEdicao = false
                   menuAtivo = 'criaorca'
+                  orcammentodav = true
                   criarOrcamento = true
                 }
               "
@@ -282,9 +283,10 @@
               @click="
                 () => {
                   ocultar()
-                  limparOs()
+                  limparOs()                  
                   trocartituloOs()
                   desabilitarTudo = false
+                  orcamentodav = false
                   cadastraros = true
                   entrarOrcamento = false
                   menuAtivo = 'cadastrooser'
@@ -303,6 +305,7 @@
                 () => {
                   ocultar()
                   trocartituloOs()
+                  orcamentodav = false
                   listagemos = true
                   menuAtivo = 'listadoOs'
                 }
@@ -787,11 +790,9 @@
               <q-input
                 filled
                 v-model.number="desconto"
-                type="number"
-                @keyup.enter="atualizarTotaisOs"
+                type="number"                
                 label="Desconto (R$)"
-                class="label-grande"
-                @blur="atualizarTotaisOs"
+                class="label-grande"                
               />
             </div>
             <div class="col-4">
@@ -1603,6 +1604,8 @@ const resultadoBusca = ref([])
 const buscaItem = ref('')
 const observacao = ref(null)
 const adiantamento = ref(0)
+const orcamentodav = ref(false)
+const aviso = ref(false)
 const condicao = ref(null)
 const validade = ref(null)
 const menuAtivo = ref(null)
@@ -2059,7 +2062,7 @@ watch(
     celCliente.value = cliente?.celular || ''
     telCliente.value = cliente?.telefone || ''
     emailCliente.value = cliente?.email || ''
-  },
+  },  
 )
 
 function navegarLista(event) {
@@ -2144,8 +2147,8 @@ const buscarItem = async () => {
 }
 
 function adicionarItem(item) {
+  orcamentodav.value = true
   if (!item) return
-
   itensOrcamento.value.push({
     produtoid: item.controle,
     nome: item.nome,
@@ -2153,9 +2156,7 @@ function adicionarItem(item) {
     valorunit: item.precovenda,
     total: item.precovenda,
   })
-
   atualizarTotais()
-
   resultadoBusca.value = []
   buscaItem.value = ''
   itemSelecionado.value = -1
@@ -2189,18 +2190,24 @@ function atualizarTotais() {
   }
   let soma = subtotal - desconto.value + Number(acrescimo.value)
   totalGeral.value = Math.max(0, soma)
+  debugger
+  /*if (aviso.value) {
+    ocultar()
+    listarOrcamento.value = true
+  }*/
 }
 
 watch(desconto, () => {
-  if (criarOrcamento.value) {
+  debugger
+  if (orcamentodav.value==true) {    
     atualizarTotais()
-  } else {
-    atualizarTotaisOs()
+  } else {        
+    atualizarTotaisOs()    
   }
 })
 
 watch(acrescimo, () => {
-  if (criarOrcamento.value) {
+  if (orcamentodav.value) {
     atualizarTotais()
   } else {
     atualizarTotaisOs()
@@ -2222,7 +2229,7 @@ watch(adiantamento, () => {
 }*/
 
 async function salvarOrcamento() {
-  debugger
+  debugger  
   if (!clienteSelecionado.value) {
     showToast('Selecione um cliente!', 3000)
     return
@@ -2282,7 +2289,7 @@ async function salvarOrcamento() {
   } catch (error) {
     console.error('Erro ao salvar orçamento:', error)
     showToast('Erro ao salvar orçamento!', 3000)
-  }
+  }    
 }
 
 async function limparOrcamento() {
@@ -2477,6 +2484,7 @@ const editarOrcamento = async (row) => {
   console.log('DADOS ENVIADOS PARA EDITAR:', row)
   titulo.value = 'ATUALIZAR ORÇAMENTO' + '  -  ' + 'Nº:' + row.numero
   entrarOrcamento.value = true
+  orcamentodav.value = true
   criarOrcamento.value = true
   listarOrcamento.value = false
   idOrcamentoEdicao.value = row.id
@@ -2540,6 +2548,7 @@ async function carregarItensDoOrcamento(id) {
 }
 
 async function salvarEdicao() {
+  debugger  
   if (!idOrcamentoEdicao.value) {
     showToast('Orçamento inválido para edição')
     return
@@ -2567,8 +2576,6 @@ async function salvarEdicao() {
 
     if (resultado.success || resultado.sucesso) {
       idOrcamentoEdicao.value = null
-      ocultar()
-      listarOrcamento.value = true
       carregarOrcamento()
     } else {
       showToast('Erro ao atualizar orçamento')
@@ -2578,7 +2585,7 @@ async function salvarEdicao() {
   } catch (erro) {
     console.error('Erro ao atualizar orçamento:', erro)
     showToast(erro.message || 'Erro ao atualizar orçamento')
-  }
+  }    
 }
 
 async function parseJsonSeguro(res) {
@@ -2591,10 +2598,11 @@ async function parseJsonSeguro(res) {
 
 function finalizarEdicao() {
   idOrcamentoEdicao.value = null
+  carregarOrcamento()
+  entrarOrcamento.value = true
+  showToastv('Orçamento atualizado com sucesso')
   ocultar()
   listarOrcamento.value = true
-  carregarOrcamento()
-  showToastv('Orçamento atualizado com sucesso')
 }
 
 function abrirCalendario() {
@@ -2902,7 +2910,7 @@ async function salvarServico() {
 }
 
 async function salvarOrdem() {
-  debugger
+  // debugger
   if (!clienteSelecionado.value) {
     showToast('Selecione um cliente!', 3000)
     return
@@ -2950,6 +2958,7 @@ async function salvarOrdem() {
   try {
     const res = await axios.post('/ordens', payload)
     showToastv('Ordem criada com sucesso!', 1500)
+    aviso.value = true
     console.log('✔ OS criada:', res.data)
     limparOs()
     listarOrdensServico()
@@ -2962,6 +2971,7 @@ async function salvarOrdem() {
 const editarOs = async (row) => {
   desabilitarTudo.value = false
   entrarOrcamento.value = true
+  aviso.value = false
   const status = (row.status || '').toUpperCase()
   if (status === 'FINALIZADA' || status === 'FINALIZADO') {
     showToast('Esta OS está finalizada, não pode ser editada!', 2000)
@@ -2974,6 +2984,7 @@ const editarOs = async (row) => {
   titulo.value = 'ATUALIZAR ORDEM DE SERVIÇO - Nº: ' + row.numeroos
   modoEdicao.value = true
   cadastraros.value = true
+  orcamentodav.value = false
   listagemos.value = false
   idOsEdicao.value = row.id
   clienteSelecionado.value = row.clienteid
@@ -3051,6 +3062,7 @@ function excluirItemOs(index) {
 }
 
 function adicionarItemOs(item) {
+  orcamentodav.value = false
   if (!item) return
   const existente = itensOrdemos.value.find((i) => i.produtoid === item.controle)
   if (existente) {
@@ -3073,28 +3085,25 @@ function adicionarItemOs(item) {
 
 function atualizarTotaisOs() {
   const VALOR_MINIMO = 0.01
-
   const subtotal = itensOrdemos.value.reduce((acc, i) => {
     i.total = Number(i.quantidade) * Number(i.valorunitario)
     return acc + i.total
   }, 0)
-
   let acrescimoNum = Number(acrescimo.value) || 0
   let descontoNum = Number(desconto.value) || 0
   let adiantamentoNum = Number(adiantamento.value) || 0
-
   const totalBase = subtotal + acrescimoNum
-
   // 🔒 Reajuste direto: desconto maior que total
-  if (descontoNum >= totalBase && !entrarOrcamento.value) {
+  if(!aviso.value)
+  {
+  if (descontoNum >= totalBase && !entrarOrcamento.value ) {
     descontoNum = totalBase - VALOR_MINIMO
     desconto.value = descontoNum.toFixed(2)
     showToast('Desconto reajustado para manter o valor mínimo da fatura.', 3000)
   }
-
   const totalFinal = totalBase - descontoNum - adiantamentoNum
-
   totalGeral.value = Math.max(VALOR_MINIMO, totalFinal)
+  }
 }
 
 async function limparOs() {
@@ -3224,7 +3233,7 @@ function limparFormularioSer() {
 }
 
 async function salvarEdicaoOs() {
-  debugger
+  // debugger
   const dados = {
     clienteid: clienteSelecionado.value,
     status: item.value.status,
@@ -3330,7 +3339,7 @@ async function removerObjeto(objeto, index) {
 }
 
 watch(clienteSelecionado, async (novoCliente) => {
-  debugger
+  //debugger
   objetoSelecionado.value = null
   objetosCliente.value = []
 
