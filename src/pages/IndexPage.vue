@@ -127,7 +127,7 @@
                   desabilitarTudo = false
                   idOrcamentoEdicao = false
                   menuAtivo = 'criaorca'
-                  orcammentodav = true
+                  orcamentodav = true
                   criarOrcamento = true
                 }
               "
@@ -288,6 +288,7 @@
                   desabilitarTudo = false
                   orcamentodav = false
                   cadastraros = true
+                  aviso = true;
                   entrarOrcamento = false
                   menuAtivo = 'cadastrooser'
                 }
@@ -1606,6 +1607,7 @@ const observacao = ref(null)
 const adiantamento = ref(0)
 const orcamentodav = ref(false)
 const aviso = ref(false)
+const limpar = ref(false)
 const condicao = ref(null)
 const validade = ref(null)
 const menuAtivo = ref(null)
@@ -2053,7 +2055,7 @@ watch(
       endCliente.value = ''
       return
     }
-
+    limpar.value = false
     const cliente = clientes.value.find((c) => c.id === novoId)
     cpfCliente.value = cliente?.cpf || ''
     endCliente.value = cliente?.endereco || ''
@@ -2170,36 +2172,43 @@ function excluirItemOrç(index) {
 // Atualizar totais
 
 function atualizarTotais() {
-  // debugger
-  let subtotal = itensOrcamento.value.reduce((acc, i) => {
-    i.total = i.quantidade * i.valorunit
+  const VALOR_MINIMO = 0.01  
+  const subtotal = itensOrcamento.value.reduce((acc, i) => {
+    i.total = Number(i.quantidade) * Number(i.valorunit)
     return acc + i.total
   }, 0)
-
-  const descontoMaximo = Math.max(0, totalGeral.value - 0.01)
-  if (entrarOrcamento.value == false) {
-    if (desconto.value > descontoMaximo) {
-      showToast('O desconto informado é maior que o permitido e foi reajustado!', 3000)
-      desconto.value = descontoMaximo.toFixed(2)
+  const acrescimoNum = Number(acrescimo.value) || 0
+  let descontoNum = Number(desconto.value) || 0
+  const totalBase = subtotal + acrescimoNum
+  const descontoMaximo = Math.max(0, totalBase - VALOR_MINIMO)
+  // 🔒 Regras só quando NÃO for orçamento
+  if (!entrarOrcamento.value) {
+    if (descontoNum > descontoMaximo) {
+      descontoNum = descontoMaximo
+      desconto.value = descontoNum.toFixed(2)
+      showToast(
+        'O desconto informado é maior que o permitido e foi reajustado!',
+        3000
+      )
       if (acrescimoRef.value) {
         setTimeout(() => {
           acrescimoRef.value.focus()
         }, 50)
       }
-    }
+    } 
   }
-  let soma = subtotal - desconto.value + Number(acrescimo.value)
-  totalGeral.value = Math.max(0, soma)
-  debugger
-  /*if (aviso.value) {
-    ocultar()
-    listarOrcamento.value = true
-  }*/
+  // 🧮 Total final
+  if(!limpar.value)
+  {
+  const totalFinal = totalBase - descontoNum
+  totalGeral.value = Math.max(VALOR_MINIMO, totalFinal)  
+  }
 }
+
 
 watch(desconto, () => {
   debugger
-  if (orcamentodav.value==true) {    
+  if (orcamentodav.value==true) {        
     atualizarTotais()
   } else {        
     atualizarTotaisOs()    
@@ -2229,7 +2238,8 @@ watch(adiantamento, () => {
 }*/
 
 async function salvarOrcamento() {
-  debugger  
+  debugger   
+  //entrarOrcamento.value = true 
   if (!clienteSelecionado.value) {
     showToast('Selecione um cliente!', 3000)
     return
@@ -2309,6 +2319,7 @@ async function limparOrcamento() {
   telCliente.value = ''
   celCliente.value = ''
   emailCliente.value = ''
+  limpar.value = true
   item.value.status = 'ABERTO'
 }
 
@@ -2477,6 +2488,7 @@ const idOrcamentoEdicao = ref(null)
 
 const editarOrcamento = async (row) => {
   // debugger
+  //entrarOrcamento.value = true
   if (row.status?.toLowerCase() === 'finalizado') {
     showToast('Este orçamento está Finalizado e não pode ser editado!', 2000)
     return
@@ -2484,6 +2496,7 @@ const editarOrcamento = async (row) => {
   console.log('DADOS ENVIADOS PARA EDITAR:', row)
   titulo.value = 'ATUALIZAR ORÇAMENTO' + '  -  ' + 'Nº:' + row.numero
   entrarOrcamento.value = true
+  limpar.value = false
   orcamentodav.value = true
   criarOrcamento.value = true
   listarOrcamento.value = false
@@ -2548,12 +2561,11 @@ async function carregarItensDoOrcamento(id) {
 }
 
 async function salvarEdicao() {
-  debugger  
+  debugger    
   if (!idOrcamentoEdicao.value) {
     showToast('Orçamento inválido para edição')
     return
   }
-
   const dados = {
     clienteId: clienteSelecionado.value,
     validade: validade.value,
@@ -2783,8 +2795,19 @@ const colunasOs = [
   },
   {
     name: 'acrescimo',
-    label: 'Acréscimo.',
+    label: 'Acréscimo',
     field: 'acrescimo',
+    align: 'right',
+    format: (val) =>
+      Number(val).toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+      }),
+  },
+  {
+    name: 'adiantamento',
+    label: 'Adiantamento',
+    field: 'adiantamento',
     align: 'right',
     format: (val) =>
       Number(val).toLocaleString('pt-BR', {
@@ -3063,6 +3086,7 @@ function excluirItemOs(index) {
 
 function adicionarItemOs(item) {
   orcamentodav.value = false
+  aviso.value = false  
   if (!item) return
   const existente = itensOrdemos.value.find((i) => i.produtoid === item.controle)
   if (existente) {
@@ -3083,7 +3107,7 @@ function adicionarItemOs(item) {
   itemSelecionado.value = -1
 }
 
-function atualizarTotaisOs() {
+function atualizarTotaisOs() {  
   const VALOR_MINIMO = 0.01
   const subtotal = itensOrdemos.value.reduce((acc, i) => {
     i.total = Number(i.quantidade) * Number(i.valorunitario)
@@ -3099,11 +3123,12 @@ function atualizarTotaisOs() {
   if (descontoNum >= totalBase && !entrarOrcamento.value ) {
     descontoNum = totalBase - VALOR_MINIMO
     desconto.value = descontoNum.toFixed(2)
-    showToast('Desconto reajustado para manter o valor mínimo da fatura.', 3000)
-  }
+    showToast('Desconto reajustado para manter o valor mínimo da fatura.', 3000)  
+  }  
   const totalFinal = totalBase - descontoNum - adiantamentoNum
   totalGeral.value = Math.max(VALOR_MINIMO, totalFinal)
   }
+  
 }
 
 async function limparOs() {
@@ -3114,6 +3139,7 @@ async function limparOs() {
   itensOrcamento.value.length = 0
   desconto.value = 0
   acrescimo.value = 0
+  adiantamento.value = 0
   totalGeral.value = 0
   buscaItem.value = ''
   resultadoBusca.value.length = 0
@@ -3126,6 +3152,7 @@ async function limparOs() {
   telCliente.value = ''
   celCliente.value = ''
   emailCliente.value = ''
+  aviso.value = true
   if (item.value) {
     item.value.status = 'ABERTO'
   }
@@ -3234,6 +3261,22 @@ function limparFormularioSer() {
 
 async function salvarEdicaoOs() {
   // debugger
+  if (!clienteSelecionado.value) {
+    showToast('Selecione um cliente!', 3000)
+    return
+  }
+  if (!objetoSelecionado.value) {
+    showToast('Selecione o objeto da ordem!', 3000)
+    return
+  }
+  if (!itensOrdemos.value?.length) {
+    showToast('Adicione pelo menos 1 item!', 3000)
+    return
+  }
+  if (!totalGeral.value || totalGeral.value <= 0) {
+    showToast('Total da ordem não pode ser zero!', 3000)
+    return
+  }
   const dados = {
     clienteid: clienteSelecionado.value,
     status: item.value.status,
@@ -3349,9 +3392,7 @@ watch(clienteSelecionado, async (novoCliente) => {
 
   try {
     const statusOs = item.value.status
-
-    const usarRotaCompleta = statusOs === 'CANCELADA' || statusOs === 'FINALIZADA'
-
+    const usarRotaCompleta = statusOs === 'CANCELADA' || statusOs === 'FINALIZADA' || criarOrcamento.value
     const url = usarRotaCompleta
       ? `/clientesos/${novoCliente}/objetos`
       : `/clientes/${novoCliente}/objetos`
