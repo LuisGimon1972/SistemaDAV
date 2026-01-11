@@ -15,6 +15,22 @@ CREATE TABLE IF NOT EXISTS clientes (
     bairro TEXT
 );
 
+CREATE TABLE IF NOT EXISTS vendedor (
+    id SERIAL PRIMARY KEY,
+    cpf TEXT,
+    nome TEXT,    
+    endereco TEXT,
+    email TEXT,
+    telefone TEXT,
+    celular TEXT,    
+    cep TEXT,
+    bairro TEXT,
+    salario REAL,
+    comissao REAL,
+    dataadmissao TEXT
+);
+
+
 -- =========================
 -- TABELA ITENS (PRODUTOS)
 -- =========================

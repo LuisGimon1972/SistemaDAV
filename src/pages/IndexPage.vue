@@ -96,13 +96,14 @@
           @click="
             () => {
               davmenuOs = false
+              davmenuPv = false
               davmenuOrcamento = !davmenuOrcamento
               menuAtivo = 'listarelas'
             }
           "
         >
           <q-item-section avatar>
-            <q-icon name="description" />
+            <q-icon name="price_check" />
           </q-item-section>
           <q-item-section>Orçamento</q-item-section>
           <q-item-section side>
@@ -152,7 +153,7 @@
               "
             >
               <q-item-section avatar>
-                <q-icon name="format_list_bulleted" />
+                <q-icon name="list_alt" />
               </q-item-section>
               <q-item-section> Listagem Orçamentos </q-item-section>
             </q-item>
@@ -226,7 +227,8 @@
           @click="
             () => {
               davmenuOs = !davmenuOs
-              davmenuOrcamento = false
+              davmenuOrcamento = false              
+              davmenuPv = false
               menuAtivo = 'submenuos'
             }
           "
@@ -255,7 +257,7 @@
               "
             >
               <q-item-section avatar>
-                <q-icon name="engineering" />
+                <q-icon name="miscellaneous_services" />
               </q-item-section>
               <q-item-section> Cadastro de Serviço </q-item-section>
             </q-item>
@@ -272,7 +274,7 @@
               "
             >
               <q-item-section avatar>
-                <q-icon name="engineering" />
+                <q-icon name="format_list_bulleted" />
               </q-item-section>
               <q-item-section> Listagem de Serviços </q-item-section>
             </q-item>
@@ -319,7 +321,113 @@
             </q-item>
           </div>
         </q-slide-transition>
+          
+
+        <q-item
+          clickable
+          :active="menuAtivo === 'submenupv'"
+          active-class="item-ativo"
+          @click="
+            () => {
+              davmenuPv = !davmenuPv              
+              davmenuOrcamento = false              
+              davmenuOs = false
+              menuAtivo = 'submenupv'
+            }
+          "
+        >
+          <q-item-section avatar>
+            <q-icon name="shopping_cart" />
+          </q-item-section>
+
+          <q-item-section>Pedido de venda</q-item-section>
+          <q-item-section side>
+            <q-icon :name="davmenuPv ? 'expand_less' : 'expand_more'" />
+          </q-item-section>
+        </q-item>
+
+        <q-slide-transition>
+          <div v-if="davmenuPv">
+            <q-item
+              clickable
+              :class="{ 'menu-ativo': menuAtivo === 'cadastrovendedor' }"
+              @click="
+                () => {
+                  ocultar()
+                  mostrarCadastroser = true
+                  menuAtivo = 'cadastrovendedor'
+                }
+              "
+            >
+              <q-item-section avatar>
+                <q-icon name="how_to_reg" />
+              </q-item-section>
+              <q-item-section> Cadastro de Vendedores </q-item-section>
+            </q-item>
+
+            <q-item
+              clickable
+              :class="{ 'menu-ativo': menuAtivo === 'listadovendedores' }"
+              @click="
+                () => {
+                  ocultar()
+                  mostrarservicos = true
+                  menuAtivo = 'listadovendedores'
+                }
+              "
+            >
+              <q-item-section avatar>
+                <q-icon name="recent_actors" />
+              </q-item-section>
+              <q-item-section> Listagem de Vendedores </q-item-section>
+            </q-item>
+
+            <q-item
+              clickable
+              :class="{ 'menu-ativo': menuAtivo === 'cadastropv' }"
+              @click="
+                () => {
+                  ocultar()
+                  limparOs()                  
+                  trocartituloOs()
+                  desabilitarTudo = false
+                  orcamentodav = false
+                  cadastraros = true
+                  aviso = true;
+                  entrarOrcamento = false
+                  menuAtivo = 'cadastropv'
+                }
+              "
+            >
+              <q-item-section avatar>
+                <q-icon name="shopping_cart" />
+              </q-item-section>
+              <q-item-section> Cadastro de PV</q-item-section>
+            </q-item>
+            <q-item
+              clickable
+              :class="{ 'menu-ativo': menuAtivo === 'listadoPv' }"
+              @click="
+                () => {
+                  ocultar()
+                  trocartituloOs()
+                  orcamentodav = false
+                  listagemos = true
+                  menuAtivo = 'listadoPv'
+                }
+              "
+            >
+              <q-item-section avatar>
+                <q-icon name="list_alt" />
+              </q-item-section>
+              <q-item-section> Listagem PV </q-item-section>
+            </q-item>
+          </div>
+        </q-slide-transition>
+
       </div>
+
+      
       <!-- CONTEÚDO PRINCIPAL -->
       <div class="conteudo" style="flex-grow: 1; padding: 20px">
         <!-- ===================== -->
@@ -2716,6 +2824,8 @@ const abrirRelatorioStatus = () => {
 /////////////////////////
 
 const davmenuOs = ref(false)
+const davmenuPv = ref(false)
+
 const ordensServico = ref([])
 const carregandoOs = ref(false)
 const idOsEdicao = ref(null)

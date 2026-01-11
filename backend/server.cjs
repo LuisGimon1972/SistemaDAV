@@ -1726,6 +1726,148 @@ app.get('/clientesos/:id/objetos', async (req, res) => {
   }
 })
 
+//ROTAS VENDEDORES
+app.post('/vendedores', async (req, res) => {
+  try {
+    const {
+      cpf,
+      nome,
+      endereco,
+      email,
+      telefone,
+      celular,
+      cep,
+      bairro,
+      salario,
+      comissao,
+      dataadmissao
+    } = req.body
+
+    if (!nome) {
+      return res.status(400).json({ erro: 'Nome é obrigatório' })
+    }
+
+    const { rows } = await pool.query(
+      `
+      INSERT INTO vendedor
+      (cpf, nome, endereco, email, telefone, celular, cep, bairro, salario, comissao, dataadmissao)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+      RETURNING *
+      `,
+      [cpf, nome, endereco, email, telefone, celular, cep, bairro, salario, comissao, dataadmissao]
+    )
+
+    res.status(201).json(rows[0])
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ erro: 'Erro ao cadastrar vendedor' })
+  }
+})
+
+app.get('/vendedores', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT * FROM vendedor ORDER BY nome`
+    )
+    res.json(rows)
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ erro: 'Erro ao listar vendedores' })
+  }
+})
+
+app.get('/vendedores/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id)
+
+    const { rows } = await pool.query(
+      `SELECT * FROM vendedor WHERE id = $1`,
+      [id]
+    )
+
+    if (rows.length === 0) {
+      return res.status(404).json({ erro: 'Vendedor não encontrado' })
+    }
+
+    res.json(rows[0])
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ erro: 'Erro ao buscar vendedor' })
+  }
+})
+
+app.put('/vendedores/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id)
+    const {
+      cpf,
+      nome,
+      endereco,
+      email,
+      telefone,
+      celular,
+      cep,
+      bairro,
+      salario,
+      comissao,
+      dataadmissao
+    } = req.body
+
+    if (!nome) {
+      return res.status(400).json({ erro: 'Nome é obrigatório' })
+    }
+
+    const { rowCount, rows } = await pool.query(
+      `
+      UPDATE vendedor SET
+        cpf = $1,
+        nome = $2,
+        endereco = $3,
+        email = $4,
+        telefone = $5,
+        celular = $6,
+        cep = $7,
+        bairro = $8,
+        salario = $9,
+        comissao = $10,
+        dataadmissao = $11
+      WHERE id = $12
+      RETURNING *
+      `,
+      [cpf, nome, endereco, email, telefone, celular, cep, bairro, salario, comissao, dataadmissao, id]
+    )
+
+    if (rowCount === 0) {
+      return res.status(404).json({ erro: 'Vendedor não encontrado' })
+    }
+
+    res.json(rows[0])
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ erro: 'Erro ao atualizar vendedor' })
+  }
+})
+
+app.delete('/vendedores/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id)
+
+    const { rowCount } = await pool.query(
+      `DELETE FROM vendedor WHERE id = $1`,
+      [id]
+    )
+
+    if (rowCount === 0) {
+      return res.status(404).json({ erro: 'Vendedor não encontrado' })
+    }
+
+    res.json({ mensagem: 'Vendedor removido com sucesso' })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ erro: 'Erro ao remover vendedor' })
+  }
+})
+
 // ==========================================
 //  INICIAR SERVIDOR
 // ==========================================
