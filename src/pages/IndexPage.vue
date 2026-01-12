@@ -227,11 +227,7 @@
           @click="
             () => {
               davmenuOs = !davmenuOs
-<<<<<<< HEAD
               davmenuOrcamento = false
-=======
-              davmenuOrcamento = false              
->>>>>>> 56881542bd890b54530f7e271990f30c49943b19
               davmenuPv = false
               menuAtivo = 'submenuos'
             }
@@ -289,16 +285,12 @@
               @click="
                 () => {
                   ocultar()
-                  limparOs()                  
+                  limparOs()
                   trocartituloOs()
                   desabilitarTudo = false
                   orcamentodav = false
                   cadastraros = true
-<<<<<<< HEAD
                   aviso = true
-=======
-                  aviso = true;
->>>>>>> 56881542bd890b54530f7e271990f30c49943b19
                   entrarOrcamento = false
                   menuAtivo = 'cadastrooser'
                 }
@@ -329,10 +321,6 @@
             </q-item>
           </div>
         </q-slide-transition>
-<<<<<<< HEAD
-=======
-          
->>>>>>> 56881542bd890b54530f7e271990f30c49943b19
 
         <q-item
           clickable
@@ -340,13 +328,8 @@
           active-class="item-ativo"
           @click="
             () => {
-<<<<<<< HEAD
               davmenuPv = !davmenuPv
               davmenuOrcamento = false
-=======
-              davmenuPv = !davmenuPv              
-              davmenuOrcamento = false              
->>>>>>> 56881542bd890b54530f7e271990f30c49943b19
               davmenuOs = false
               menuAtivo = 'submenupv'
             }
@@ -370,11 +353,7 @@
               @click="
                 () => {
                   ocultar()
-<<<<<<< HEAD
                   cadastroVendedor = true
-=======
-                  mostrarCadastroser = true
->>>>>>> 56881542bd890b54530f7e271990f30c49943b19
                   menuAtivo = 'cadastrovendedor'
                 }
               "
@@ -408,20 +387,12 @@
               @click="
                 () => {
                   ocultar()
-<<<<<<< HEAD
                   limparOs()
-=======
-                  limparOs()                  
->>>>>>> 56881542bd890b54530f7e271990f30c49943b19
                   trocartituloOs()
                   desabilitarTudo = false
                   orcamentodav = false
                   cadastraros = true
-<<<<<<< HEAD
                   aviso = true
-=======
-                  aviso = true;
->>>>>>> 56881542bd890b54530f7e271990f30c49943b19
                   entrarOrcamento = false
                   menuAtivo = 'cadastropv'
                 }
@@ -452,15 +423,8 @@
             </q-item>
           </div>
         </q-slide-transition>
-<<<<<<< HEAD
       </div>
 
-=======
-
-      </div>
-
-      
->>>>>>> 56881542bd890b54530f7e271990f30c49943b19
       <!-- CONTEÚDO PRINCIPAL -->
       <div class="conteudo" style="flex-grow: 1; padding: 20px">
         <!-- ===================== -->
@@ -932,15 +896,9 @@
               <q-input
                 filled
                 v-model.number="desconto"
-<<<<<<< HEAD
                 type="number"
                 label="Desconto (R$)"
                 class="label-grande"
-=======
-                type="number"                
-                label="Desconto (R$)"
-                class="label-grande"                
->>>>>>> 56881542bd890b54530f7e271990f30c49943b19
               />
             </div>
             <div class="col-4">
@@ -2375,7 +2333,7 @@ watch(
     celCliente.value = cliente?.celular || ''
     telCliente.value = cliente?.telefone || ''
     emailCliente.value = cliente?.email || ''
-  },  
+  },
 )
 
 function navegarLista(event) {
@@ -2483,11 +2441,7 @@ function excluirItemOrç(index) {
 // Atualizar totais
 
 function atualizarTotais() {
-<<<<<<< HEAD
   const VALOR_MINIMO = 0.01
-=======
-  const VALOR_MINIMO = 0.01  
->>>>>>> 56881542bd890b54530f7e271990f30c49943b19
   const subtotal = itensOrcamento.value.reduce((acc, i) => {
     i.total = Number(i.quantidade) * Number(i.valorunit)
     return acc + i.total
@@ -2501,48 +2455,27 @@ function atualizarTotais() {
     if (descontoNum > descontoMaximo) {
       descontoNum = descontoMaximo
       desconto.value = descontoNum.toFixed(2)
-<<<<<<< HEAD
       showToast('O desconto informado é maior que o permitido e foi reajustado!', 3000)
-=======
-      showToast(
-        'O desconto informado é maior que o permitido e foi reajustado!',
-        3000
-      )
->>>>>>> 56881542bd890b54530f7e271990f30c49943b19
       if (acrescimoRef.value) {
         setTimeout(() => {
           acrescimoRef.value.focus()
         }, 50)
       }
-    } 
+    }
   }
-  // 🧮 Total final
-  if(!limpar.value)
-  {
-  const totalFinal = totalBase - descontoNum
-  totalGeral.value = Math.max(VALOR_MINIMO, totalFinal)  
-  }
-<<<<<<< HEAD
   // 🧮 Total final
   if (!limpar.value) {
     const totalFinal = totalBase - descontoNum
     totalGeral.value = Math.max(VALOR_MINIMO, totalFinal)
   }
-=======
->>>>>>> 56881542bd890b54530f7e271990f30c49943b19
 }
-
 
 watch(desconto, () => {
   debugger
-<<<<<<< HEAD
   if (orcamentodav.value == true) {
-=======
-  if (orcamentodav.value==true) {        
->>>>>>> 56881542bd890b54530f7e271990f30c49943b19
     atualizarTotais()
-  } else {        
-    atualizarTotaisOs()    
+  } else {
+    atualizarTotaisOs()
   }
 })
 
@@ -2569,13 +2502,8 @@ watch(adiantamento, () => {
 }*/
 
 async function salvarOrcamento() {
-<<<<<<< HEAD
   debugger
   //entrarOrcamento.value = true
-=======
-  debugger   
-  //entrarOrcamento.value = true 
->>>>>>> 56881542bd890b54530f7e271990f30c49943b19
   if (!clienteSelecionado.value) {
     showToast('Selecione um cliente!', 3000)
     return
@@ -2635,7 +2563,7 @@ async function salvarOrcamento() {
   } catch (error) {
     console.error('Erro ao salvar orçamento:', error)
     showToast('Erro ao salvar orçamento!', 3000)
-  }    
+  }
 }
 
 async function limparOrcamento() {
@@ -2897,11 +2825,7 @@ async function carregarItensDoOrcamento(id) {
 }
 
 async function salvarEdicao() {
-<<<<<<< HEAD
   debugger
-=======
-  debugger    
->>>>>>> 56881542bd890b54530f7e271990f30c49943b19
   if (!idOrcamentoEdicao.value) {
     showToast('Orçamento inválido para edição')
     return
@@ -2937,7 +2861,7 @@ async function salvarEdicao() {
   } catch (erro) {
     console.error('Erro ao atualizar orçamento:', erro)
     showToast(erro.message || 'Erro ao atualizar orçamento')
-  }    
+  }
 }
 
 async function parseJsonSeguro(res) {
@@ -3428,11 +3352,7 @@ function excluirItemOs(index) {
 
 function adicionarItemOs(item) {
   orcamentodav.value = false
-<<<<<<< HEAD
   aviso.value = false
-=======
-  aviso.value = false  
->>>>>>> 56881542bd890b54530f7e271990f30c49943b19
   if (!item) return
   const existente = itensOrdemos.value.find((i) => i.produtoid === item.controle)
   if (existente) {
@@ -3453,7 +3373,7 @@ function adicionarItemOs(item) {
   itemSelecionado.value = -1
 }
 
-function atualizarTotaisOs() {  
+function atualizarTotaisOs() {
   const VALOR_MINIMO = 0.01
   const subtotal = itensOrdemos.value.reduce((acc, i) => {
     i.total = Number(i.quantidade) * Number(i.valorunitario)
@@ -3464,7 +3384,6 @@ function atualizarTotaisOs() {
   let adiantamentoNum = Number(adiantamento.value) || 0
   const totalBase = subtotal + acrescimoNum
   // 🔒 Reajuste direto: desconto maior que total
-<<<<<<< HEAD
   if (!aviso.value) {
     if (descontoNum >= totalBase && !entrarOrcamento.value) {
       descontoNum = totalBase - VALOR_MINIMO
@@ -3474,19 +3393,6 @@ function atualizarTotaisOs() {
     const totalFinal = totalBase - descontoNum - adiantamentoNum
     totalGeral.value = Math.max(VALOR_MINIMO, totalFinal)
   }
-=======
-  if(!aviso.value)
-  {
-  if (descontoNum >= totalBase && !entrarOrcamento.value ) {
-    descontoNum = totalBase - VALOR_MINIMO
-    desconto.value = descontoNum.toFixed(2)
-    showToast('Desconto reajustado para manter o valor mínimo da fatura.', 3000)  
-  }  
-  const totalFinal = totalBase - descontoNum - adiantamentoNum
-  totalGeral.value = Math.max(VALOR_MINIMO, totalFinal)
-  }
-  
->>>>>>> 56881542bd890b54530f7e271990f30c49943b19
 }
 
 async function limparOs() {
@@ -3750,12 +3656,8 @@ watch(clienteSelecionado, async (novoCliente) => {
 
   try {
     const statusOs = item.value.status
-<<<<<<< HEAD
     const usarRotaCompleta =
       statusOs === 'CANCELADA' || statusOs === 'FINALIZADA' || criarOrcamento.value
-=======
-    const usarRotaCompleta = statusOs === 'CANCELADA' || statusOs === 'FINALIZADA' || criarOrcamento.value
->>>>>>> 56881542bd890b54530f7e271990f30c49943b19
     const url = usarRotaCompleta
       ? `/clientesos/${novoCliente}/objetos`
       : `/clientes/${novoCliente}/objetos`
