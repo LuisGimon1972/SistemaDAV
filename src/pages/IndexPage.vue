@@ -1218,14 +1218,12 @@
                     </div>
                     <div style="width: 25%">
                       <q-input
-                        ref="limiteInput"
                         outlined
-                        color="black"
                         class="dark-border"
-                        v-model.number="vendedor.salario"
-                        label="Salario Base"
-                        type="number"
-                        @input="validarDecimal('salario')"
+                        label="Salário Base"
+                        v-model="salarioFormatado"
+                        @blur="formatarSalario"
+                        inputmode="decimal"
                       />
                     </div>
                     <div style="width: 25%">
@@ -1237,7 +1235,7 @@
                         v-model.number="vendedor.comissao"
                         label="Comissão %"
                         type="number"
-                        @input="validarDecimal('comissao')"
+                        @input="validarDecimal2('comissao')"
                       />
                     </div>
                     <div style="width: 25%">
@@ -3799,8 +3797,8 @@ async function salvarVendedor() {
     const hoje = new Date()
     hoje.setHours(0, 0, 0, 0)
     const dataAdmissao = new Date(dataFormatada + 'T00:00:00')
-    if (dataAdmissao < hoje) {
-      showToast('A data de admissão não pode ser menor que a data atual!', 1500)
+    if (dataAdmissao > hoje) {
+      showToast('A data de admissão não pode ser maior que a data atual!', 1500)
       return
     }
   }
@@ -3877,7 +3875,7 @@ async function salvarVendedor() {
     limparFormularioVendedor()
     carregarVendedores()
     ocultar()
-    //  listarVendedores.value = true
+    listarVendedores.value = true
   }
 }
 
@@ -3890,6 +3888,44 @@ function limparFormularioVendedor() {
 async function carregarVendedores() {
   const res = await fetch(`${API_URL}/vendedores`)
   vendedores.value = await res.json()
+}
+
+const salarioFormatado = ref('')
+
+/* 🔄 sincroniza quando editar */
+watch(
+  () => vendedor.value.salario,
+  (val) => {
+    if (val !== null && val !== undefined) {
+      salarioFormatado.value = formatarMoeda(val)
+    }
+  },
+  { immediate: true },
+)
+
+/* 💰 formatação visual */
+function formatarMoeda(valor) {
+  return Number(valor).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+}
+
+/* ✔️ ao sair do campo */
+function formatarSalario() {
+  let valor = salarioFormatado.value
+
+  if (!valor) {
+    vendedor.value.salario = 0
+    salarioFormatado.value = '0,00'
+    return
+  }
+
+  valor = valor.replace(/\./g, '').replace(',', '.')
+  const num = Number(valor)
+
+  vendedor.value.salario = isNaN(num) ? 0 : num
+  salarioFormatado.value = formatarMoeda(vendedor.value.salario)
 }
 
 /////////////////////////////
@@ -3943,6 +3979,15 @@ function validarDecimal(campo) {
   }
   const num = parseFloat(valor)
   item.value[campo] = isNaN(num) ? 0 : num
+}
+
+function validarDecimal2(campo) {
+  let valor = vendedor.value[campo]
+  if (typeof valor === 'string') {
+    valor = valor.replace(',', '.')
+  }
+  const num = parseFloat(valor)
+  vendedor.value[campo] = isNaN(num) ? 0 : num
 }
 
 function bemvinda() {
