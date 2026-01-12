@@ -96,13 +96,14 @@
           @click="
             () => {
               davmenuOs = false
+              davmenuPv = false
               davmenuOrcamento = !davmenuOrcamento
               menuAtivo = 'listarelas'
             }
           "
         >
           <q-item-section avatar>
-            <q-icon name="description" />
+            <q-icon name="price_check" />
           </q-item-section>
           <q-item-section>Orçamento</q-item-section>
           <q-item-section side>
@@ -127,6 +128,7 @@
                   desabilitarTudo = false
                   idOrcamentoEdicao = false
                   menuAtivo = 'criaorca'
+                  orcamentodav = true
                   criarOrcamento = true
                 }
               "
@@ -151,7 +153,7 @@
               "
             >
               <q-item-section avatar>
-                <q-icon name="format_list_bulleted" />
+                <q-icon name="list_alt" />
               </q-item-section>
               <q-item-section> Listagem Orçamentos </q-item-section>
             </q-item>
@@ -226,6 +228,7 @@
             () => {
               davmenuOs = !davmenuOs
               davmenuOrcamento = false
+              davmenuPv = false
               menuAtivo = 'submenuos'
             }
           "
@@ -254,7 +257,7 @@
               "
             >
               <q-item-section avatar>
-                <q-icon name="engineering" />
+                <q-icon name="miscellaneous_services" />
               </q-item-section>
               <q-item-section> Cadastro de Serviço </q-item-section>
             </q-item>
@@ -271,7 +274,7 @@
               "
             >
               <q-item-section avatar>
-                <q-icon name="engineering" />
+                <q-icon name="format_list_bulleted" />
               </q-item-section>
               <q-item-section> Listagem de Serviços </q-item-section>
             </q-item>
@@ -285,7 +288,9 @@
                   limparOs()
                   trocartituloOs()
                   desabilitarTudo = false
+                  orcamentodav = false
                   cadastraros = true
+                  aviso = true
                   entrarOrcamento = false
                   menuAtivo = 'cadastrooser'
                 }
@@ -303,6 +308,7 @@
                 () => {
                   ocultar()
                   trocartituloOs()
+                  orcamentodav = false
                   listagemos = true
                   menuAtivo = 'listadoOs'
                 }
@@ -315,7 +321,110 @@
             </q-item>
           </div>
         </q-slide-transition>
+
+        <q-item
+          clickable
+          :active="menuAtivo === 'submenupv'"
+          active-class="item-ativo"
+          @click="
+            () => {
+              davmenuPv = !davmenuPv
+              davmenuOrcamento = false
+              davmenuOs = false
+              menuAtivo = 'submenupv'
+            }
+          "
+        >
+          <q-item-section avatar>
+            <q-icon name="shopping_cart" />
+          </q-item-section>
+
+          <q-item-section>Pedido de venda</q-item-section>
+          <q-item-section side>
+            <q-icon :name="davmenuPv ? 'expand_less' : 'expand_more'" />
+          </q-item-section>
+        </q-item>
+
+        <q-slide-transition>
+          <div v-if="davmenuPv">
+            <q-item
+              clickable
+              :class="{ 'menu-ativo': menuAtivo === 'cadastrovendedor' }"
+              @click="
+                () => {
+                  ocultar()
+                  cadastroVendedor = true
+                  menuAtivo = 'cadastrovendedor'
+                }
+              "
+            >
+              <q-item-section avatar>
+                <q-icon name="how_to_reg" />
+              </q-item-section>
+              <q-item-section> Cadastro de Vendedores </q-item-section>
+            </q-item>
+
+            <q-item
+              clickable
+              :class="{ 'menu-ativo': menuAtivo === 'listadovendedores' }"
+              @click="
+                () => {
+                  ocultar()
+                  mostrarservicos = true
+                  menuAtivo = 'listadovendedores'
+                }
+              "
+            >
+              <q-item-section avatar>
+                <q-icon name="recent_actors" />
+              </q-item-section>
+              <q-item-section> Listagem de Vendedores </q-item-section>
+            </q-item>
+
+            <q-item
+              clickable
+              :class="{ 'menu-ativo': menuAtivo === 'cadastropv' }"
+              @click="
+                () => {
+                  ocultar()
+                  limparOs()
+                  trocartituloOs()
+                  desabilitarTudo = false
+                  orcamentodav = false
+                  cadastraros = true
+                  aviso = true
+                  entrarOrcamento = false
+                  menuAtivo = 'cadastropv'
+                }
+              "
+            >
+              <q-item-section avatar>
+                <q-icon name="shopping_cart" />
+              </q-item-section>
+              <q-item-section> Cadastro de PV</q-item-section>
+            </q-item>
+            <q-item
+              clickable
+              :class="{ 'menu-ativo': menuAtivo === 'listadoPv' }"
+              @click="
+                () => {
+                  ocultar()
+                  trocartituloOs()
+                  orcamentodav = false
+                  listagemos = true
+                  menuAtivo = 'listadoPv'
+                }
+              "
+            >
+              <q-item-section avatar>
+                <q-icon name="list_alt" />
+              </q-item-section>
+              <q-item-section> Listagem PV </q-item-section>
+            </q-item>
+          </div>
+        </q-slide-transition>
       </div>
+
       <!-- CONTEÚDO PRINCIPAL -->
       <div class="conteudo" style="flex-grow: 1; padding: 20px">
         <!-- ===================== -->
@@ -788,10 +897,8 @@
                 filled
                 v-model.number="desconto"
                 type="number"
-                @keyup.enter="atualizarTotaisOs"
                 label="Desconto (R$)"
                 class="label-grande"
-                @blur="atualizarTotaisOs"
               />
             </div>
             <div class="col-4">
@@ -998,6 +1105,167 @@
 
             <template #no-data />
           </q-table>
+        </div>
+
+        <div v-if="cadastroVendedor">
+          <q-page padding>
+            <q-card class="q-pa-md">
+              <q-card-section>
+                <div class="text-h4 text-blue-8 q-mb-lg">Novo Vendedor</div>
+                <q-form @submit.prevent="salvarCliente">
+                  <div class="flex gap-2">
+                    <div class="col">
+                      <q-input
+                        ref="cpfInput"
+                        outlined
+                        color="black"
+                        class="w-1/3 dark-border"
+                        v-model="vendedor.cpf"
+                        label="CPF"
+                        mask="###.###.###-##"
+                      />
+                    </div>
+                    <div class="col">
+                      <q-input
+                        ref="nomeInput"
+                        outlined
+                        color="black"
+                        class="w-1/3 dark-border"
+                        v-model="vendedor.nome"
+                        @update:model-value="(val) => (vendedor.nome = val.toUpperCase())"
+                        label="Nome Completo"
+                        maxlength="50"
+                      />
+                    </div>
+                    <div class="col">
+                      <q-input
+                        ref="cepInput"
+                        outlined
+                        color="black"
+                        class="dark-border"
+                        v-model="vendedor.cep"
+                        label="CEP"
+                        mask="#####-###"
+                        @update:model-value="buscarCep"
+                      />
+                    </div>
+                  </div>
+                  <div class="flex gap-2">
+                    <div style="width: 35%">
+                      <q-input
+                        outlined
+                        color="black"
+                        class="w-1/3 dark-border"
+                        v-model="vendedor.endereco"
+                        label="Endereço"
+                        @keydown.prevent
+                      />
+                    </div>
+                    <div style="width: 25%">
+                      <q-input
+                        outlined
+                        color="black"
+                        class="w-1/3 dark-border"
+                        v-model="vendedor.bairro"
+                        @update:model-value="(val) => (vendedor.bairro = val.toUpperCase())"
+                        label="Bairro"
+                        @keydown.prevent
+                      />
+                    </div>
+                    <div style="width: 25%">
+                      <q-input
+                        outlined
+                        color="black"
+                        class="w-1/3 dark-border"
+                        v-model="vendedor.email"
+                        @update:model-value="(val) => (vendedor.email = val.toLowerCase())"
+                        label="Email"
+                        clearable
+                        lazy-rules
+                        :rules="[
+                          (val) => !!val || 'Campo obrigatório',
+                          (val) => /.+@.+\..+/.test(val) || 'E-mail inválido',
+                        ]"
+                        maxlength="100"
+                      />
+                    </div>
+                    <div style="width: 15%">
+                      <q-input
+                        outlined
+                        color="black"
+                        class="w-1/3 dark-border"
+                        v-model="vendedor.telefone"
+                        label="Telefone"
+                        mask="(##)####.####"
+                      />
+                    </div>
+                  </div>
+                  <div style="margin-top: -20px" class="flex">
+                    <div style="width: 25%">
+                      <q-input
+                        outlined
+                        color="black"
+                        class="dark-border"
+                        v-model="vendedor.celular"
+                        label="Celular"
+                        mask="(##)#####.####"
+                      />
+                    </div>
+                    <div style="width: 25%">
+                      <q-input
+                        ref="limiteInput"
+                        outlined
+                        color="black"
+                        class="dark-border"
+                        v-model.number="vendedor.salario"
+                        label="Salario Base"
+                        type="number"
+                        @input="validarDecimal('salario')"
+                      />
+                    </div>
+                    <div style="width: 25%">
+                      <q-input
+                        ref="limiteInput"
+                        outlined
+                        color="black"
+                        class="dark-border"
+                        v-model.number="vendedor.comissao"
+                        label="Comissão %"
+                        type="number"
+                        @input="validarDecimal('comissao')"
+                      />
+                    </div>
+                    <div style="width: 25%">
+                      <q-input
+                        outlined
+                        color="black"
+                        v-model="vendedor.admissao"
+                        label="Data de admissão"
+                        class="dark-border"
+                        @click="abrirCalendario"
+                      >
+                        <template #append>
+                          <q-icon name="event" class="cursor-pointer" @click="abrirCalendario" />
+                        </template>
+
+                        <q-popup-proxy
+                          ref="popupValidade"
+                          transition-show="scale"
+                          transition-hide="scale"
+                        >
+                          <q-date v-model="vendedor.admissao" mask="DD-MM-YYYY" />
+                        </q-popup-proxy>
+                      </q-input>
+                    </div>
+                  </div>
+                  <div class="q-gutter-md q-mt-md text-center">
+                    <q-btn label="Salvar" type="submit" color="primary" icon="save" />
+                    <q-btn label="Limpar" flat icon="refresh" @click="limparFormulario" />
+                  </div>
+                </q-form>
+              </q-card-section>
+            </q-card>
+          </q-page>
         </div>
 
         <!-- MODULO CADASTRO -->
@@ -1571,6 +1839,7 @@ const $q = useQuasar()
 
 const API_URL = 'http://localhost:3000'
 const cliente = ref(novoCliente())
+const vendedor = ref(novoCliente())
 const clientes = ref([])
 const item = ref(novoItem())
 const itens = ref([])
@@ -1590,6 +1859,7 @@ const quanInput = ref(null)
 const custoInput = ref(null),
   vendaInput = ref(null)
 const mostrarCadastro = ref(false)
+const cadastroVendedor = ref(false)
 const mostrarCadastroser = ref(false)
 const mostrarservicos = ref(false)
 const cadastraros = ref(false)
@@ -1603,6 +1873,9 @@ const resultadoBusca = ref([])
 const buscaItem = ref('')
 const observacao = ref(null)
 const adiantamento = ref(0)
+const orcamentodav = ref(false)
+const aviso = ref(false)
+const limpar = ref(false)
 const condicao = ref(null)
 const validade = ref(null)
 const menuAtivo = ref(null)
@@ -1626,6 +1899,7 @@ function ocultar() {
   mostrarservicos.value = false
   listagemos.value = false
   cadastraros.value = false
+  cadastroVendedor.value = false
   listarClientes.value = false
   mostrarItens.value = false
   mostrarFormObjetos.value = false
@@ -2050,7 +2324,7 @@ watch(
       endCliente.value = ''
       return
     }
-
+    limpar.value = false
     const cliente = clientes.value.find((c) => c.id === novoId)
     cpfCliente.value = cliente?.cpf || ''
     endCliente.value = cliente?.endereco || ''
@@ -2144,8 +2418,8 @@ const buscarItem = async () => {
 }
 
 function adicionarItem(item) {
+  orcamentodav.value = true
   if (!item) return
-
   itensOrcamento.value.push({
     produtoid: item.controle,
     nome: item.nome,
@@ -2153,9 +2427,7 @@ function adicionarItem(item) {
     valorunit: item.precovenda,
     total: item.precovenda,
   })
-
   atualizarTotais()
-
   resultadoBusca.value = []
   buscaItem.value = ''
   itemSelecionado.value = -1
@@ -2169,17 +2441,21 @@ function excluirItemOrç(index) {
 // Atualizar totais
 
 function atualizarTotais() {
-  // debugger
-  let subtotal = itensOrcamento.value.reduce((acc, i) => {
-    i.total = i.quantidade * i.valorunit
+  const VALOR_MINIMO = 0.01
+  const subtotal = itensOrcamento.value.reduce((acc, i) => {
+    i.total = Number(i.quantidade) * Number(i.valorunit)
     return acc + i.total
   }, 0)
-
-  const descontoMaximo = Math.max(0, totalGeral.value - 0.01)
-  if (entrarOrcamento.value == false) {
-    if (desconto.value > descontoMaximo) {
+  const acrescimoNum = Number(acrescimo.value) || 0
+  let descontoNum = Number(desconto.value) || 0
+  const totalBase = subtotal + acrescimoNum
+  const descontoMaximo = Math.max(0, totalBase - VALOR_MINIMO)
+  // 🔒 Regras só quando NÃO for orçamento
+  if (!entrarOrcamento.value) {
+    if (descontoNum > descontoMaximo) {
+      descontoNum = descontoMaximo
+      desconto.value = descontoNum.toFixed(2)
       showToast('O desconto informado é maior que o permitido e foi reajustado!', 3000)
-      desconto.value = descontoMaximo.toFixed(2)
       if (acrescimoRef.value) {
         setTimeout(() => {
           acrescimoRef.value.focus()
@@ -2187,12 +2463,16 @@ function atualizarTotais() {
       }
     }
   }
-  let soma = subtotal - desconto.value + Number(acrescimo.value)
-  totalGeral.value = Math.max(0, soma)
+  // 🧮 Total final
+  if (!limpar.value) {
+    const totalFinal = totalBase - descontoNum
+    totalGeral.value = Math.max(VALOR_MINIMO, totalFinal)
+  }
 }
 
 watch(desconto, () => {
-  if (criarOrcamento.value) {
+  debugger
+  if (orcamentodav.value == true) {
     atualizarTotais()
   } else {
     atualizarTotaisOs()
@@ -2200,7 +2480,7 @@ watch(desconto, () => {
 })
 
 watch(acrescimo, () => {
-  if (criarOrcamento.value) {
+  if (orcamentodav.value) {
     atualizarTotais()
   } else {
     atualizarTotaisOs()
@@ -2223,6 +2503,7 @@ watch(adiantamento, () => {
 
 async function salvarOrcamento() {
   debugger
+  //entrarOrcamento.value = true
   if (!clienteSelecionado.value) {
     showToast('Selecione um cliente!', 3000)
     return
@@ -2302,6 +2583,7 @@ async function limparOrcamento() {
   telCliente.value = ''
   celCliente.value = ''
   emailCliente.value = ''
+  limpar.value = true
   item.value.status = 'ABERTO'
 }
 
@@ -2470,6 +2752,7 @@ const idOrcamentoEdicao = ref(null)
 
 const editarOrcamento = async (row) => {
   // debugger
+  //entrarOrcamento.value = true
   if (row.status?.toLowerCase() === 'finalizado') {
     showToast('Este orçamento está Finalizado e não pode ser editado!', 2000)
     return
@@ -2477,6 +2760,8 @@ const editarOrcamento = async (row) => {
   console.log('DADOS ENVIADOS PARA EDITAR:', row)
   titulo.value = 'ATUALIZAR ORÇAMENTO' + '  -  ' + 'Nº:' + row.numero
   entrarOrcamento.value = true
+  limpar.value = false
+  orcamentodav.value = true
   criarOrcamento.value = true
   listarOrcamento.value = false
   idOrcamentoEdicao.value = row.id
@@ -2540,11 +2825,11 @@ async function carregarItensDoOrcamento(id) {
 }
 
 async function salvarEdicao() {
+  debugger
   if (!idOrcamentoEdicao.value) {
     showToast('Orçamento inválido para edição')
     return
   }
-
   const dados = {
     clienteId: clienteSelecionado.value,
     validade: validade.value,
@@ -2567,8 +2852,6 @@ async function salvarEdicao() {
 
     if (resultado.success || resultado.sucesso) {
       idOrcamentoEdicao.value = null
-      ocultar()
-      listarOrcamento.value = true
       carregarOrcamento()
     } else {
       showToast('Erro ao atualizar orçamento')
@@ -2591,10 +2874,11 @@ async function parseJsonSeguro(res) {
 
 function finalizarEdicao() {
   idOrcamentoEdicao.value = null
+  carregarOrcamento()
+  entrarOrcamento.value = true
+  showToastv('Orçamento atualizado com sucesso')
   ocultar()
   listarOrcamento.value = true
-  carregarOrcamento()
-  showToastv('Orçamento atualizado com sucesso')
 }
 
 function abrirCalendario() {
@@ -2696,6 +2980,8 @@ const abrirRelatorioStatus = () => {
 /////////////////////////
 
 const davmenuOs = ref(false)
+const davmenuPv = ref(false)
+
 const ordensServico = ref([])
 const carregandoOs = ref(false)
 const idOsEdicao = ref(null)
@@ -2775,8 +3061,19 @@ const colunasOs = [
   },
   {
     name: 'acrescimo',
-    label: 'Acréscimo.',
+    label: 'Acréscimo',
     field: 'acrescimo',
+    align: 'right',
+    format: (val) =>
+      Number(val).toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+      }),
+  },
+  {
+    name: 'adiantamento',
+    label: 'Adiantamento',
+    field: 'adiantamento',
     align: 'right',
     format: (val) =>
       Number(val).toLocaleString('pt-BR', {
@@ -2902,7 +3199,7 @@ async function salvarServico() {
 }
 
 async function salvarOrdem() {
-  debugger
+  // debugger
   if (!clienteSelecionado.value) {
     showToast('Selecione um cliente!', 3000)
     return
@@ -2950,6 +3247,7 @@ async function salvarOrdem() {
   try {
     const res = await axios.post('/ordens', payload)
     showToastv('Ordem criada com sucesso!', 1500)
+    aviso.value = true
     console.log('✔ OS criada:', res.data)
     limparOs()
     listarOrdensServico()
@@ -2962,6 +3260,7 @@ async function salvarOrdem() {
 const editarOs = async (row) => {
   desabilitarTudo.value = false
   entrarOrcamento.value = true
+  aviso.value = false
   const status = (row.status || '').toUpperCase()
   if (status === 'FINALIZADA' || status === 'FINALIZADO') {
     showToast('Esta OS está finalizada, não pode ser editada!', 2000)
@@ -2974,6 +3273,7 @@ const editarOs = async (row) => {
   titulo.value = 'ATUALIZAR ORDEM DE SERVIÇO - Nº: ' + row.numeroos
   modoEdicao.value = true
   cadastraros.value = true
+  orcamentodav.value = false
   listagemos.value = false
   idOsEdicao.value = row.id
   clienteSelecionado.value = row.clienteid
@@ -3051,6 +3351,8 @@ function excluirItemOs(index) {
 }
 
 function adicionarItemOs(item) {
+  orcamentodav.value = false
+  aviso.value = false
   if (!item) return
   const existente = itensOrdemos.value.find((i) => i.produtoid === item.controle)
   if (existente) {
@@ -3073,28 +3375,24 @@ function adicionarItemOs(item) {
 
 function atualizarTotaisOs() {
   const VALOR_MINIMO = 0.01
-
   const subtotal = itensOrdemos.value.reduce((acc, i) => {
     i.total = Number(i.quantidade) * Number(i.valorunitario)
     return acc + i.total
   }, 0)
-
   let acrescimoNum = Number(acrescimo.value) || 0
   let descontoNum = Number(desconto.value) || 0
   let adiantamentoNum = Number(adiantamento.value) || 0
-
   const totalBase = subtotal + acrescimoNum
-
   // 🔒 Reajuste direto: desconto maior que total
-  if (descontoNum >= totalBase && !entrarOrcamento.value) {
-    descontoNum = totalBase - VALOR_MINIMO
-    desconto.value = descontoNum.toFixed(2)
-    showToast('Desconto reajustado para manter o valor mínimo da fatura.', 3000)
+  if (!aviso.value) {
+    if (descontoNum >= totalBase && !entrarOrcamento.value) {
+      descontoNum = totalBase - VALOR_MINIMO
+      desconto.value = descontoNum.toFixed(2)
+      showToast('Desconto reajustado para manter o valor mínimo da fatura.', 3000)
+    }
+    const totalFinal = totalBase - descontoNum - adiantamentoNum
+    totalGeral.value = Math.max(VALOR_MINIMO, totalFinal)
   }
-
-  const totalFinal = totalBase - descontoNum - adiantamentoNum
-
-  totalGeral.value = Math.max(VALOR_MINIMO, totalFinal)
 }
 
 async function limparOs() {
@@ -3105,6 +3403,7 @@ async function limparOs() {
   itensOrcamento.value.length = 0
   desconto.value = 0
   acrescimo.value = 0
+  adiantamento.value = 0
   totalGeral.value = 0
   buscaItem.value = ''
   resultadoBusca.value.length = 0
@@ -3117,6 +3416,7 @@ async function limparOs() {
   telCliente.value = ''
   celCliente.value = ''
   emailCliente.value = ''
+  aviso.value = true
   if (item.value) {
     item.value.status = 'ABERTO'
   }
@@ -3224,7 +3524,23 @@ function limparFormularioSer() {
 }
 
 async function salvarEdicaoOs() {
-  debugger
+  // debugger
+  if (!clienteSelecionado.value) {
+    showToast('Selecione um cliente!', 3000)
+    return
+  }
+  if (!objetoSelecionado.value) {
+    showToast('Selecione o objeto da ordem!', 3000)
+    return
+  }
+  if (!itensOrdemos.value?.length) {
+    showToast('Adicione pelo menos 1 item!', 3000)
+    return
+  }
+  if (!totalGeral.value || totalGeral.value <= 0) {
+    showToast('Total da ordem não pode ser zero!', 3000)
+    return
+  }
   const dados = {
     clienteid: clienteSelecionado.value,
     status: item.value.status,
@@ -3330,7 +3646,7 @@ async function removerObjeto(objeto, index) {
 }
 
 watch(clienteSelecionado, async (novoCliente) => {
-  debugger
+  //debugger
   objetoSelecionado.value = null
   objetosCliente.value = []
 
@@ -3340,9 +3656,8 @@ watch(clienteSelecionado, async (novoCliente) => {
 
   try {
     const statusOs = item.value.status
-
-    const usarRotaCompleta = statusOs === 'CANCELADA' || statusOs === 'FINALIZADA'
-
+    const usarRotaCompleta =
+      statusOs === 'CANCELADA' || statusOs === 'FINALIZADA' || criarOrcamento.value
     const url = usarRotaCompleta
       ? `/clientesos/${novoCliente}/objetos`
       : `/clientes/${novoCliente}/objetos`
