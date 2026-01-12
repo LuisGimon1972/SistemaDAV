@@ -1112,7 +1112,7 @@
             <q-card class="q-pa-md">
               <q-card-section>
                 <div class="text-h4 text-blue-8 q-mb-lg">Novo Vendedor</div>
-                <q-form @submit.prevent="salvarCliente">
+                <q-form @submit.prevent="salvarVendedor">
                   <div class="flex gap-2">
                     <div class="col">
                       <q-input
@@ -1239,7 +1239,7 @@
                       <q-input
                         outlined
                         color="black"
-                        v-model="vendedor.admissao"
+                        v-model="admissao"
                         label="Data de admissão"
                         class="dark-border"
                         @click="abrirCalendario"
@@ -1253,14 +1253,14 @@
                           transition-show="scale"
                           transition-hide="scale"
                         >
-                          <q-date v-model="vendedor.admissao" mask="DD-MM-YYYY" />
+                          <q-date v-model="admissao" mask="DD-MM-YYYY" />
                         </q-popup-proxy>
                       </q-input>
                     </div>
                   </div>
                   <div class="q-gutter-md q-mt-md text-center">
                     <q-btn label="Salvar" type="submit" color="primary" icon="save" />
-                    <q-btn label="Limpar" flat icon="refresh" @click="limparFormulario" />
+                    <q-btn label="Limpar" flat icon="refresh" @click="limparFormularioVendedor" />
                   </div>
                 </q-form>
               </q-card-section>
@@ -1823,6 +1823,7 @@ import usuario from 'src/assets/usuario.png'
 import { imprimirOrcamentoPorId, imprimirOsPorId } from 'src/utils/impressao.js'
 import { ref, onMounted, watch, nextTick } from 'vue'
 import novoCliente from 'src/models/Cliente'
+import novoVendedor from 'src/models/Vendedor'
 import novoItem from 'src/models/Item'
 import axios from 'axios'
 import { Dialog, Notify } from 'quasar'
@@ -1839,7 +1840,7 @@ const $q = useQuasar()
 
 const API_URL = 'http://localhost:3000'
 const cliente = ref(novoCliente())
-const vendedor = ref(novoCliente())
+const vendedor = ref(novoVendedor())
 const clientes = ref([])
 const item = ref(novoItem())
 const itens = ref([])
@@ -1878,6 +1879,7 @@ const aviso = ref(false)
 const limpar = ref(false)
 const condicao = ref(null)
 const validade = ref(null)
+const admissao = ref(null)
 const menuAtivo = ref(null)
 const titulo = ref(null)
 const cepcerto = ref(null)
@@ -2000,6 +2002,8 @@ const buscarCep = async (val) => {
     //cliente.value.estado = res.data.uf || ''
     cliente.value.bairro = res.data.bairro.toUpperCase() || ''
     cliente.value.endereco = res.data.logradouro.toUpperCase() || ''
+    vendedor.value.bairro = res.data.bairro.toUpperCase() || ''
+    vendedor.value.endereco = res.data.logradouro.toUpperCase() || ''
     cepcerto.value = true
   } catch (err) {
     console.error('Erro ao buscar CEP', err)
@@ -2589,6 +2593,22 @@ async function limparOrcamento() {
 
 watch(
   () => validade.value,
+  (novaData) => {
+    if (!novaData) return
+    const [dia, mes, ano] = novaData.split('-')
+    const dataFormatada = `${ano}-${mes}-${dia}`
+    const hoje = new Date()
+    hoje.setHours(0, 0, 0, 0)
+    const dataEscolhida = new Date(dataFormatada + 'T00:00:00')
+    if (dataEscolhida < hoje && entrarOrcamento.value == false) {
+      showToast(`A validade não pode ser menor que a data atual!`, 3000)
+      validade.value = null
+    }
+  },
+)
+
+watch(
+  () => admissao.value,
   (novaData) => {
     if (!novaData) return
     const [dia, mes, ano] = novaData.split('-')
@@ -3695,6 +3715,114 @@ function formatarPlacaSerie() {
   }
 
   // Caso não seja placa → considera SÉRIE (não mexe)
+}
+
+///////Pedido de Venda
+
+async function salvarVendedor() {
+  // 🔒 Validações básicas
+
+  if (!vendedor.value.cpf) {
+    showToast('CPF é obrigatório!', 1000)
+    return cpfInput.value?.focus()
+  }
+  if (!vendedor.value.nome) {
+    showToast('Nome é obrigatório!', 1000)
+    return nomeInput.value?.focus()
+  }
+
+  if (admissao.value) {
+    const [dia, mes, ano] = admissao.value.split('-')
+    const dataFormatada = `${ano}-${mes}-${dia}`
+    const hoje = new Date()
+    hoje.setHours(0, 0, 0, 0)
+    const dataAdmissao = new Date(dataFormatada + 'T00:00:00')
+    if (dataAdmissao < hoje) {
+      showToast('A data de admissão não pode ser menor que a data atual!', 1500)
+      return
+    }
+  }
+
+  if (cepcerto.value === false) {
+    showToast('Preencha um CEP correto!', 1000)
+    vendedor.value.cep = ''
+    return cepInput.value?.focus()
+  }
+
+  /* =========================
+     🔹 NOVO VENDEDOR (POST)
+     ========================= */
+  if (!vendedor.value.id) {
+    // 🔍 verifica CPF duplicado
+    const vendedoresExistentes = await fetch(`${API_URL}/vendedores`).then((res) => res.json())
+
+    const cpfDuplicado = vendedoresExistentes.find((v) => v.cpf === vendedor.value.cpf)
+
+    if (cpfDuplicado) {
+      showToast('Já existe um vendedor com este CPF!', 1500)
+      return cpfInput.value?.focus()
+    }
+
+    const res = await fetch(`${API_URL}/vendedores`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cpf: vendedor.value.cpf,
+        nome: vendedor.value.nome,
+        endereco: vendedor.value.endereco,
+        email: vendedor.value.email,
+        telefone: vendedor.value.telefone,
+        celular: vendedor.value.celular,
+        cep: vendedor.value.cep,
+        bairro: vendedor.value.bairro,
+        salario: vendedor.value.salario,
+        comissao: vendedor.value.comissao,
+        dataadmissao: admissao.value, // 🔑 backend espera dataadmissao
+      }),
+    })
+
+    if (!res.ok) {
+      showToast('Erro ao salvar vendedor!', 1500)
+      return
+    }
+
+    showToastv('Vendedor salvo com sucesso!', 1000)
+    limparFormularioVendedor()
+    //    carregarVendedores()
+  } else {
+    /* =========================
+     🔹 ATUALIZA VENDEDOR (PUT)
+     ========================= */
+    await fetch(`${API_URL}/vendedores/${vendedor.value.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cpf: vendedor.value.cpf,
+        nome: vendedor.value.nome,
+        endereco: vendedor.value.endereco,
+        email: vendedor.value.email,
+        telefone: vendedor.value.telefone,
+        celular: vendedor.value.celular,
+        cep: vendedor.value.cep,
+        bairro: vendedor.value.bairro,
+        salario: vendedor.value.salario,
+        comissao: vendedor.value.comissao,
+        dataadmissao: vendedor.value.admissao,
+      }),
+    })
+
+    showToastv('Vendedor atualizado com sucesso!', 1000)
+    limparFormularioVendedor()
+    //  carregarVendedores()
+    ocultar()
+    //  listarVendedores.value = true
+  }
+}
+
+function limparFormularioVendedor() {
+  vendedor.value = novoVendedor()
+  admissao.value = ''
+  cpfInput.value.focus()
 }
 
 /////////////////////////////
