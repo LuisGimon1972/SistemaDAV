@@ -370,7 +370,7 @@
               @click="
                 () => {
                   ocultar()
-                  mostrarservicos = true
+                  listarVendedores = true
                   menuAtivo = 'listadovendedores'
                 }
               "
@@ -1544,6 +1544,36 @@
           </q-table>
         </div>
 
+        <div v-if="listarVendedores">
+          <q-table
+            title="Listagem de Vendedores"
+            :rows="vendedores"
+            :columns="colunasvendedor"
+            row-key="id"
+            class="q-mt-md"
+            dense
+            title-class="text-h4 text-primary q-pa-md"
+            :pagination="{ page: 1, rowsPerPage: 14 }"
+          >
+            <template v-slot:body-cell-acoes="props">
+              <q-td align="center">
+                <q-btn
+                  size="sm"
+                  color="warning"
+                  icon="edit"
+                  @click="(editarCliente(props.row), (mostrarCadastro = true))"
+                />
+                <q-btn
+                  size="sm"
+                  color="negative"
+                  icon="delete"
+                  @click="excluirCliente(props.row.id)"
+                />
+              </q-td>
+            </template>
+          </q-table>
+        </div>
+
         <div v-if="mostrarservicos">
           <q-table
             title="Listagem de Serviços"
@@ -1842,6 +1872,7 @@ const API_URL = 'http://localhost:3000'
 const cliente = ref(novoCliente())
 const vendedor = ref(novoVendedor())
 const clientes = ref([])
+const vendedores = ref([])
 const item = ref(novoItem())
 const itens = ref([])
 const servicos = ref([])
@@ -1868,6 +1899,7 @@ const listagemos = ref(false)
 const mostrarItens = ref(false)
 const listarItens = ref(false)
 const listarClientes = ref(false)
+const listarVendedores = ref(false)
 const listarDividas = ref(false)
 const resumoDividas = ref(false)
 const resultadoBusca = ref([])
@@ -1903,6 +1935,7 @@ function ocultar() {
   cadastraros.value = false
   cadastroVendedor.value = false
   listarClientes.value = false
+  listarVendedores.value = false
   mostrarItens.value = false
   mostrarFormObjetos.value = false
   listarItens.value = false
@@ -2593,22 +2626,6 @@ async function limparOrcamento() {
 
 watch(
   () => validade.value,
-  (novaData) => {
-    if (!novaData) return
-    const [dia, mes, ano] = novaData.split('-')
-    const dataFormatada = `${ano}-${mes}-${dia}`
-    const hoje = new Date()
-    hoje.setHours(0, 0, 0, 0)
-    const dataEscolhida = new Date(dataFormatada + 'T00:00:00')
-    if (dataEscolhida < hoje && entrarOrcamento.value == false) {
-      showToast(`A validade não pode ser menor que a data atual!`, 3000)
-      validade.value = null
-    }
-  },
-)
-
-watch(
-  () => admissao.value,
   (novaData) => {
     if (!novaData) return
     const [dia, mes, ano] = novaData.split('-')
@@ -3718,6 +3735,15 @@ function formatarPlacaSerie() {
 }
 
 ///////Pedido de Venda
+const colunasvendedor = [
+  { name: 'cpf', label: 'CPF', field: 'cpf', align: 'left' },
+  { name: 'nome', label: 'Nome', field: 'nome', align: 'left' },
+  { name: 'endereco', label: 'Endereço', field: 'endereco', align: 'left' },
+  { name: 'email', label: 'Email', field: 'email', align: 'left' },
+  { name: 'telefone', label: 'Telefone', field: 'telefone', align: 'left' },
+  { name: 'celular', label: 'Celular', field: 'celular', align: 'left' },
+  { name: 'acoes', label: 'Ações', field: 'acoes', align: 'center' },
+]
 
 async function salvarVendedor() {
   // 🔒 Validações básicas
@@ -3825,6 +3851,11 @@ function limparFormularioVendedor() {
   cpfInput.value.focus()
 }
 
+async function carregarVendedores() {
+  const res = await fetch(`${API_URL}/vendedores`)
+  vendedores.value = await res.json()
+}
+
 /////////////////////////////
 //MÓDULOS DE UTILIZAÇÃO GERAL
 ////////////////////////////
@@ -3905,6 +3936,7 @@ onMounted(() => {
   carregarOrcamento()
   carregaraClientes()
   listarOrdensServico()
+  carregarVendedores()
 })
 
 onMounted(async () => {
