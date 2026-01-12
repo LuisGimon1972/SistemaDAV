@@ -20,6 +20,7 @@
           @click="
             () => {
               ocultar()
+              titulo = 'Novo Cliente'
               mostrarCadastro = true
               menuAtivo = 'cadastro'
             }
@@ -55,6 +56,7 @@
           @click="
             () => {
               ocultar()
+              titulo = 'Novo Produto'
               menuAtivo = 'cadastroitem'
               mostrarItens = true
             }
@@ -353,6 +355,7 @@
               @click="
                 () => {
                   ocultar()
+                  trocartituloPv()
                   cadastroVendedor = true
                   menuAtivo = 'cadastrovendedor'
                 }
@@ -1111,7 +1114,9 @@
           <q-page padding>
             <q-card class="q-pa-md">
               <q-card-section>
-                <div class="text-h4 text-blue-8 q-mb-lg">Novo Vendedor</div>
+                <div style="margin-bottom: 50px" class="text-h4 text-primary q-mb-md">
+                  {{ titulo }}
+                </div>
                 <q-form @submit.prevent="salvarVendedor">
                   <div class="flex gap-2">
                     <div class="col">
@@ -1273,7 +1278,9 @@
           <q-page padding>
             <q-card class="q-pa-md">
               <q-card-section>
-                <div class="text-h4 text-blue-8 q-mb-lg">Cadastro de Clientes</div>
+                <div style="margin-bottom: 50px" class="text-h4 text-primary q-mb-md">
+                  {{ titulo }}
+                </div>
                 <q-form @submit.prevent="salvarCliente">
                   <div class="flex gap-2">
                     <div class="col">
@@ -1561,7 +1568,7 @@
                   size="sm"
                   color="warning"
                   icon="edit"
-                  @click="(editarCliente(props.row), (mostrarCadastro = true))"
+                  @click="(editarVendedor(props.row), (cadastroVendedor = true))"
                 />
                 <q-btn
                   size="sm"
@@ -1609,7 +1616,9 @@
           <q-page padding>
             <q-card class="q-pa-md">
               <q-card-section>
-                <div class="text-h4 text-blue-8 q-mb-lg">Cadastro de Itens</div>
+                <div style="margin-bottom: 50px" class="text-h4 text-primary q-mb-md">
+                  {{ titulo }}
+                </div>
                 <q-form @submit.prevent="salvarItem">
                   <div class="flex gap-2">
                     <div class="col">
@@ -2139,9 +2148,31 @@ async function excluirCliente(id) {
 }
 
 async function editarCliente(c) {
+  titulo.value = 'Atualizar dados do cliente'
   cliente.value = { ...c }
   const res = await fetch(`${API_URL}/clientes/${c.id}/objetos`)
   objetos.value = await res.json()
+}
+
+async function editarVendedor(c) {
+  titulo.value = 'ATUALIZAR DADOS VENDEDOR'
+  try {
+    const res = await fetch(`${API_URL}/vendedores/${c.id}`)
+    if (!res.ok) throw new Error()
+
+    const data = await res.json()
+
+    vendedor.value = {
+      ...data,
+      admissao: data.dataadmissao
+        ? data.dataadmissao.split('-').reverse().join('-') // YYYY-MM-DD → DD-MM-YYYY
+        : '',
+    }
+    admissao.value = data.dataadmissao
+  } catch (err) {
+    console.error(err)
+    showToast('Erro ao carregar vendedor', 1500)
+  }
 }
 
 function decimalParaHhmm(valor) {
@@ -2270,6 +2301,7 @@ async function excluirItem(controle) {
 }
 
 function editarItem(i) {
+  titulo.value = 'Atualizar dados do produto'
   item.value = { ...i }
 }
 
@@ -2789,7 +2821,7 @@ const idOrcamentoEdicao = ref(null)
 
 const editarOrcamento = async (row) => {
   // debugger
-  //entrarOrcamento.value = true
+
   if (row.status?.toLowerCase() === 'finalizado') {
     showToast('Este orçamento está Finalizado e não pode ser editado!', 2000)
     return
@@ -3374,6 +3406,10 @@ function trocartituloOs() {
   titulo.value = 'NOVA ORDEM DE SERVIÇO'
 }
 
+function trocartituloPv() {
+  titulo.value = 'NOVO VENDEDOR'
+}
+
 function editarServico(i) {
   item.value = {
     ...i,
@@ -3814,7 +3850,7 @@ async function salvarVendedor() {
 
     showToastv('Vendedor salvo com sucesso!', 1000)
     limparFormularioVendedor()
-    //    carregarVendedores()
+    carregarVendedores()
   } else {
     /* =========================
      🔹 ATUALIZA VENDEDOR (PUT)
@@ -3839,7 +3875,7 @@ async function salvarVendedor() {
 
     showToastv('Vendedor atualizado com sucesso!', 1000)
     limparFormularioVendedor()
-    //  carregarVendedores()
+    carregarVendedores()
     ocultar()
     //  listarVendedores.value = true
   }

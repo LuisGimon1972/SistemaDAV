@@ -1740,7 +1740,7 @@ app.post('/vendedores', async (req, res) => {
       bairro,
       salario,
       comissao,
-      dataadmissao
+      dataadmissao,
     } = req.body
 
     if (!nome) {
@@ -1754,7 +1754,7 @@ app.post('/vendedores', async (req, res) => {
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
       RETURNING *
       `,
-      [cpf, nome, endereco, email, telefone, celular, cep, bairro, salario, comissao, dataadmissao]
+      [cpf, nome, endereco, email, telefone, celular, cep, bairro, salario, comissao, dataadmissao],
     )
 
     res.status(201).json(rows[0])
@@ -1766,9 +1766,7 @@ app.post('/vendedores', async (req, res) => {
 
 app.get('/vendedores', async (req, res) => {
   try {
-    const { rows } = await pool.query(
-      `SELECT * FROM vendedor ORDER BY nome`
-    )
+    const { rows } = await pool.query(`SELECT * FROM vendedor ORDER BY id`)
     res.json(rows)
   } catch (err) {
     console.error(err)
@@ -1780,10 +1778,7 @@ app.get('/vendedores/:id', async (req, res) => {
   try {
     const id = Number(req.params.id)
 
-    const { rows } = await pool.query(
-      `SELECT * FROM vendedor WHERE id = $1`,
-      [id]
-    )
+    const { rows } = await pool.query(`SELECT * FROM vendedor WHERE id = $1`, [id])
 
     if (rows.length === 0) {
       return res.status(404).json({ erro: 'Vendedor não encontrado' })
@@ -1810,7 +1805,7 @@ app.put('/vendedores/:id', async (req, res) => {
       bairro,
       salario,
       comissao,
-      dataadmissao
+      dataadmissao,
     } = req.body
 
     if (!nome) {
@@ -1834,7 +1829,20 @@ app.put('/vendedores/:id', async (req, res) => {
       WHERE id = $12
       RETURNING *
       `,
-      [cpf, nome, endereco, email, telefone, celular, cep, bairro, salario, comissao, dataadmissao, id]
+      [
+        cpf,
+        nome,
+        endereco,
+        email,
+        telefone,
+        celular,
+        cep,
+        bairro,
+        salario,
+        comissao,
+        dataadmissao,
+        id,
+      ],
     )
 
     if (rowCount === 0) {
@@ -1852,10 +1860,7 @@ app.delete('/vendedores/:id', async (req, res) => {
   try {
     const id = Number(req.params.id)
 
-    const { rowCount } = await pool.query(
-      `DELETE FROM vendedor WHERE id = $1`,
-      [id]
-    )
+    const { rowCount } = await pool.query(`DELETE FROM vendedor WHERE id = $1`, [id])
 
     if (rowCount === 0) {
       return res.status(404).json({ erro: 'Vendedor não encontrado' })
