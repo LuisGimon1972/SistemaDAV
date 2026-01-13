@@ -964,14 +964,27 @@
           <!-- SELEÇÃO DO CLIENTE -->
           <div style="margin-bottom: 20px" class="row q-col-gutter-md">
             <!-- SELECT DO CLIENTE -->
-            <div class="col-12 col-md-6">
+            <div class="col-12 col-md-3">
+              <q-select
+                filled
+                v-model="vendedorSelecionado"
+                :options="vendedores"
+                option-value="id"
+                option-label="nome"
+                label="Selecione o Vendedor"
+                emit-value
+                map-options
+              />
+            </div>
+
+            <div class="col-12 col-md-3">
               <q-select
                 filled
                 v-model="clienteSelecionado"
                 :options="clientes"
                 option-value="id"
                 option-label="nome"
-                label="Selecione o cliente"
+                label="Selecione o Cliente"
                 emit-value
                 map-options
               />
@@ -1197,7 +1210,7 @@
             color="primary"
             icon="save"
             size="md"
-            @click="modoEdicao ? salvarEdicaoOs() : salvarOrdem()"
+            @click="modoEdicao ? salvarEdicaoOs() : salvarPedido()"
           />
 
           <q-btn
@@ -2608,6 +2621,7 @@ function limparFormularioI() {
 const criarOrcamento = ref(false)
 const entrarOrcamento = ref(false)
 const clienteSelecionado = ref(null)
+const vendedorSelecionado = ref(null)
 const objetoSelecionado = ref(null)
 const objetosCliente = ref([])
 const carregandoObjetos = ref(false)
@@ -4211,27 +4225,92 @@ function atualizarTotaispv() {
     i.total = Number(i.quantidade) * Number(i.valorunit)
     return acc + i.total
   }, 0)
-  const acrescimoNum = Number(acrescimo.value) || 0
-  let descontoNum = Number(desconto.value) || 0
+  const acrescimoNum = Number(valoracrescimo.value) || 0
+  let descontoNum = Number(valordesconto.value) || 0
   const totalBase = subtotal + acrescimoNum
   const descontoMaximo = Math.max(0, totalBase - VALOR_MINIMO)
-  // 🔒 Regras só quando NÃO for orçamento
-  if (!entrarOrcamento.value) {
-    if (descontoNum > descontoMaximo) {
-      descontoNum = descontoMaximo
-      desconto.value = descontoNum.toFixed(2)
-      showToast('O desconto informado é maior que o permitido e foi reajustado!', 3000)
-      if (acrescimoRef.value) {
-        setTimeout(() => {
-          acrescimoRef.value.focus()
-        }, 50)
-      }
+  if (descontoNum > descontoMaximo) {
+    descontoNum = descontoMaximo
+    desconto.value = descontoNum.toFixed(2)
+    showToast('O desconto informado é maior que o permitido e foi reajustado!', 3000)
+    if (acrescimoRef.value) {
+      setTimeout(() => {
+        acrescimoRef.value.focus()
+      }, 50)
     }
   }
-  // 🧮 Total final
-  if (!limpar.value) {
-    const totalFinal = totalBase - descontoNum
-    totalGeral.value = Math.max(VALOR_MINIMO, totalFinal)
+  const totalFinal = totalBase - descontoNum
+  totalGeral.value = Math.max(VALOR_MINIMO, totalFinal)
+}
+
+const idPedidoEdicao = ref(false)
+
+async function salvarPedido() {
+  debugger
+
+  if (!clienteSelecionado.value) {
+    showToast('Selecione um cliente!', 3000)
+    return
+  }
+
+  if (!vendedorSelecionado.value) {
+    showToast('Selecione um vendedor!', 3000)
+    return
+  }
+
+  if (!itensOrcamento.value || itensOrcamento.value.length === 0) {
+    showToast('Adicione pelo menos 1 item!', 3000)
+    return
+  }
+
+  if (!totalGeral.value || totalGeral.value <= 0) {
+    showToast('Total do pedido não pode ser zero!', 3000)
+    return
+  }
+
+  // 🔢 Totais
+  const totalItens = totalGeral.value
+  const valorDesconto = valordesconto.value || 0
+  const valorAcrescimo = valoracrescimo.value || 0
+  const valorTotalFinal = totalItens - valorDesconto + valorAcrescimo
+
+  const payload = {
+    clienteid: clienteSelecionado.value,
+    vendedorid: vendedorSelecionado.value,
+    observacoes: observacao.value,
+    condicao: condicao.value,
+    valordesconto: valorDesconto,
+    valoracrescimo: valorAcrescimo,
+    valortotalitens: totalItens,
+    valortotal: valorTotalFinal,
+    status: 'ABERTO',
+    itens: itensOrcamento.value.map((item) => ({
+      produtoid: item.produtoid,
+      descricao: item.descricao,
+      quantidade: item.quantidade,
+      valorunit: item.valorunit,
+      tipoitem: item.tipoitem || 'PRODUTO',
+    })),
+  }
+
+  try {
+    let res
+
+    if (idPedidoEdicao.value) {
+      console.log('Atualizando pedido ID:', idPedidoEdicao.value)
+      res = await axios.put(`/pedidos/${idPedidoEdicao.value}`, payload)
+      Notify.create({ type: 'positive', message: 'Pedido atualizado com sucesso!' })
+    } else {
+      res = await axios.post('/pedidos', payload)
+      Notify.create({ type: 'positive', message: 'Pedido criado com sucesso!' })
+    }
+
+    console.log('Retorno:', res.data)
+    //    limparPedido()
+    //    carregarPedidos()
+  } catch (error) {
+    console.error('Erro ao salvar pedido:', error)
+    showToast('Erro ao salvar pedido!', 3000)
   }
 }
 
