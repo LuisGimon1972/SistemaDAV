@@ -1368,7 +1368,7 @@
                       />
                     </div>
                   </div>
-                  <div class="flex gap-2">
+                  <div style="margin-top: -20px" class="flex">
                     <div class="col">
                       <q-input
                         outlined
