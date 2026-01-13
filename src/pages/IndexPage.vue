@@ -97,6 +97,7 @@
           active-class="item-ativo"
           @click="
             () => {
+              ocultar()
               davmenuOs = false
               davmenuPv = false
               davmenuOrcamento = !davmenuOrcamento
@@ -228,6 +229,7 @@
           active-class="item-ativo"
           @click="
             () => {
+              ocultar()
               davmenuOs = !davmenuOs
               davmenuOrcamento = false
               davmenuPv = false
@@ -330,6 +332,7 @@
           active-class="item-ativo"
           @click="
             () => {
+              ocultar()
               davmenuPv = !davmenuPv
               davmenuOrcamento = false
               davmenuOs = false
@@ -391,12 +394,8 @@
                 () => {
                   ocultar()
                   limparOs()
-                  trocartituloOs()
-                  desabilitarTudo = false
-                  orcamentodav = false
-                  cadastraros = true
-                  aviso = true
-                  entrarOrcamento = false
+                  titulo = 'NOVO PEDIDO DE VENDA'
+                  cadastrarpv = true
                   menuAtivo = 'cadastropv'
                 }
               "
@@ -785,6 +784,263 @@
                 </q-item>
               </template>
             </q-select>
+          </div>
+
+          <q-input
+            v-model="buscaItem"
+            label="Buscar item"
+            @keyup="navegarListaOs"
+            class="input-grande"
+          >
+            <template #append>
+              <q-btn icon="search" @click="buscarItem" flat round />
+            </template>
+          </q-input>
+
+          <q-list bordered separator v-if="resultadoBusca.length > 0">
+            <q-item class="bg-grey-3 text-bold">
+              <q-item-section> Nome </q-item-section>
+              <q-item-section> Código </q-item-section>
+              <q-item-section side> Preço </q-item-section>
+            </q-item>
+
+            <!-- LINHAS -->
+            <q-item
+              v-for="(item, index) in resultadoBusca"
+              :key="item.controle ?? index"
+              clickable
+              @click="adicionarItemOs(item)"
+              :class="{ 'bg-blue-2': index === itemSelecionado }"
+            >
+              <q-item-section>
+                <q-item-label>{{ item.nome ?? '' }}</q-item-label>
+              </q-item-section>
+
+              <q-item-section>
+                <q-item-label>{{ item.codbarras ?? '' }}</q-item-label>
+              </q-item-section>
+
+              <q-item-section side>
+                <q-item-label class="text-positive">
+                  R$ {{ Number(item.precovenda).toFixed(2) }}
+                </q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
+
+          <q-separator spaced />
+
+          <!-- TABELA ITENS DE SERVICO -->
+          <q-table
+            title="Itens da Ordem de Serviço"
+            :rows="itensOrdemos"
+            :columns="colunasOrdemos"
+            row-key="controle"
+            flat
+            bordered
+          >
+            <template #body-cell-quantidade="props">
+              <q-td>
+                <q-input
+                  dense
+                  type="number"
+                  v-model.number="props.row.quantidade"
+                  min="1"
+                  style="width: 80px"
+                  @update:model-value="atualizarTotaisOs"
+                />
+              </q-td>
+            </template>
+
+            <template #body-cell-acoes="props">
+              <q-td class="text-center">
+                <q-btn
+                  size="sm"
+                  color="negative"
+                  icon="delete"
+                  dense
+                  round
+                  @click="excluirItemOs(props.rowIndex)"
+                >
+                  <q-tooltip>Excluir</q-tooltip>
+                </q-btn>
+              </q-td>
+            </template>
+
+            <template #no-data />
+          </q-table>
+
+          <q-input
+            filled
+            v-model="observacao"
+            type="textarea"
+            autogrow
+            label="Observação"
+            class="q-mt-md"
+            :input-style="{ minHeight: '70px' }"
+          />
+
+          <q-input
+            filled
+            v-model="condicao"
+            type="textarea"
+            autogrow
+            label="Laudo Técnico"
+            class="q-mt-md"
+            :input-style="{ minHeight: '70px' }"
+          />
+
+          <q-separator spaced />
+
+          <!-- DESCONTO / ACRÉSCIMO -->
+          <div class="row q-col-gutter-md">
+            <div class="col-4">
+              <q-input
+                filled
+                v-model.number="desconto"
+                type="number"
+                label="Desconto (R$)"
+                class="label-grande"
+              />
+            </div>
+            <div class="col-4">
+              <q-input
+                filled
+                v-model.number="acrescimo"
+                type="number"
+                @keyup.enter="atualizarTotaisOs"
+                label="Acréscimo (R$)"
+                class="label-grande"
+              />
+            </div>
+
+            <div class="col-4">
+              <q-input
+                filled
+                v-model.number="adiantamento"
+                type="number"
+                @keyup.enter="atualizarTotaisOs"
+                label="Adiantamento (R$)"
+                class="label-grande"
+                @blur="atualizarTotaisOs"
+              />
+            </div>
+          </div>
+
+          <q-separator spaced />
+
+          <!-- TOTAL GERAL -->
+          <div class="text-h5 text-right q-mb-md">
+            Total: <span class="text-positive">R$ {{ totalGeral.toFixed(2) }}</span>
+          </div>
+
+          <!-- BOTÃO SALVAR -->
+          <q-btn
+            :label="modoEdicao ? 'Salvar Alterações' : 'Salvar'"
+            color="primary"
+            icon="save"
+            size="md"
+            @click="modoEdicao ? salvarEdicaoOs() : salvarOrdem()"
+          />
+
+          <q-btn
+            label="Limpar"
+            color="negative"
+            icon="delete_sweep"
+            size="md"
+            @click="limparOs"
+            class="q-ml-md"
+          />
+        </div>
+
+        <!-- =====================      -->
+        <!-- CRIAR PEDIDO DE VENDA -->
+        <!-- =====================      -->
+
+        <div v-if="cadastrarpv" class="q-pa-md" :class="{ 'disabled-container': desabilitarTudo }">
+          <!-- TÍTULO -->
+          <div style="margin-bottom: 50px" class="text-h4 text-primary q-mb-md">{{ titulo }}</div>
+
+          <!-- SELEÇÃO DO CLIENTE -->
+          <div style="margin-bottom: 20px" class="row q-col-gutter-md">
+            <!-- SELECT DO CLIENTE -->
+            <div class="col-12 col-md-6">
+              <q-select
+                filled
+                v-model="clienteSelecionado"
+                :options="clientes"
+                option-value="id"
+                option-label="nome"
+                label="Selecione o cliente"
+                emit-value
+                map-options
+              />
+            </div>
+
+            <!-- CPF DO CLIENTE -->
+            <div class="col-12 col-md-2">
+              <q-input filled v-model="cpfCliente" label="CPF" readonly class="sem-linha" />
+            </div>
+
+            <!-- VALIDADE -->
+            <div class="col-12 col-md-2">
+              <q-input
+                filled
+                v-model="validade"
+                label="Previssão de Entrega"
+                readonly
+                class="sem-linha"
+                @click="abrirCalendario"
+              >
+                <template #append>
+                  <q-icon name="event" class="cursor-pointer" @click="abrirCalendario" />
+                </template>
+
+                <q-popup-proxy ref="popupValidade" transition-show="scale" transition-hide="scale">
+                  <q-date v-model="validade" mask="DD-MM-YYYY" />
+                </q-popup-proxy>
+              </q-input>
+            </div>
+
+            <div class="col-12 col-md-2">
+              <q-select
+                filled
+                v-model="item.status"
+                :options="[
+                  { label: 'ABERTO', value: 'ABERTO' },
+                  { label: 'FINALIZADO', value: 'FINALIZADO' },
+                ]"
+                label="Status"
+                emit-value
+                map-options
+                class="sem-linha"
+              />
+            </div>
+          </div>
+
+          <div style="margin-bottom: 20px" class="row q-col-gutter-md">
+            <!-- SELECT DO CLIENTE -->
+            <div class="col-12 col-md-1">
+              <q-input filled v-model="endCep" label="CEP" readonly class="sem-linha" />
+            </div>
+            <div class="col-12 col-md-3">
+              <q-input filled v-model="endCliente" label="Endereço" readonly class="sem-linha" />
+            </div>
+            <div class="col-12 col-md-2">
+              <q-input filled v-model="endBairro" label="Bairro" readonly class="sem-linha" />
+            </div>
+            <!-- CPF DO CLIENTE -->
+            <div class="col-12 col-md-2">
+              <q-input filled v-model="telCliente" label="Telefone" readonly class="sem-linha" />
+            </div>
+            <div class="col-12 col-md-2">
+              <q-input filled v-model="celCliente" label="Celular" readonly class="sem-linha" />
+            </div>
+            <div class="col-12 col-md-2">
+              <q-input filled v-model="emailCliente" label="E-mail" readonly class="sem-linha" />
+            </div>
+
+            <!-- VALIDADE -->
           </div>
 
           <q-input
@@ -1902,6 +2158,7 @@ const cadastroVendedor = ref(false)
 const mostrarCadastroser = ref(false)
 const mostrarservicos = ref(false)
 const cadastraros = ref(false)
+const cadastrarpv = ref(false)
 const listagemos = ref(false)
 const mostrarItens = ref(false)
 const listarItens = ref(false)
@@ -1940,6 +2197,7 @@ function ocultar() {
   mostrarservicos.value = false
   listagemos.value = false
   cadastraros.value = false
+  cadastrarpv.value = false
   cadastroVendedor.value = false
   listarClientes.value = false
   listarVendedores.value = false
@@ -2090,8 +2348,7 @@ async function salvarCliente() {
 
     const data = await res.json()
     cliente.value.id = data.id
-
-    showToastv('Cliente salvo com sucesso!', 1000)
+    Notify.create({ type: 'positive', message: 'Cliente salvo com sucesso!' })
     limparFormulario()
     carregarClientes()
   } else {
@@ -2106,8 +2363,7 @@ async function salvarCliente() {
         objetos: objetos.value, // 🔥 ESSENCIAL
       }),
     })
-
-    showToastv('Cliente atualizado com sucesso!', 1000)
+    Notify.create({ type: 'positive', message: 'Cliente atualizado com sucesso!' })
     limparFormulario()
     carregarClientes()
     ocultar()
@@ -2280,7 +2536,7 @@ async function salvarItem() {
 
     const data = await res.json()
     item.value.controle = data.controle
-    showToastv('Produto salvo com sucesso!', 1000)
+    Notify.create({ type: 'positive', message: 'Produto salvo com sucesso!' })
     limparFormularioI()
     carregarItens()
   } else {
@@ -2289,7 +2545,7 @@ async function salvarItem() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(item.value),
     })
-    showToastv('Produto atualizado com sucesso!', 1000)
+    Notify.create({ type: 'positive', message: 'Produto atualizado com sucesso!' })
     limparFormularioI()
     carregarItens()
     ocultar()
@@ -2646,13 +2902,13 @@ async function salvarOrcamento() {
     if (idOrcamentoEdicao.value) {
       console.log('Atualizando orçamento ID:', idOrcamentoEdicao.value)
       res = await axios.put(`/orcamentos/${idOrcamentoEdicao.value}`, payload)
-      showToastv('Orçamento atualizado com sucesso!', 1000)
+      Notify.create({ type: 'positive', message: 'Orçamento atualizado com sucesso!' })
       ocultar()
       carregarOrcamento()
       listarOrcamento.value = true
     } else {
       res = await axios.post('/orcamentos', payload)
-      showToastv('Orçamento criado com sucesso!', 1000)
+      Notify.create({ type: 'positive', message: 'Orçamento criado com sucesso!' })
     }
     console.log('Retorno:', res.data)
     limparOrcamento()
@@ -2973,7 +3229,7 @@ function finalizarEdicao() {
   idOrcamentoEdicao.value = null
   carregarOrcamento()
   entrarOrcamento.value = true
-  showToastv('Orçamento atualizado com sucesso')
+  Notify.create({ type: 'positive', message: 'Orçamento atualizado com sucesso!' })
   ocultar()
   listarOrcamento.value = true
 }
@@ -3278,7 +3534,7 @@ async function salvarServico() {
     })
     const data = await res.json()
     item.value.controle = data.controle
-    showToastv('Serviço salvo com sucesso!', 1000)
+    Notify.create({ type: 'positive', message: 'Serviço salvo com sucesso!' })
     limparFormularioSer()
     carregarServicos()
   } else {
@@ -3287,7 +3543,7 @@ async function salvarServico() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(item.value),
     })
-    showToastv('Serviço atualizado com sucesso!', 1000)
+    Notify.create({ type: 'positive', message: 'Serviço atualizado com sucesso!' })
     limparFormularioSer()
     carregarServicos()
     ocultar()
@@ -3343,7 +3599,7 @@ async function salvarOrdem() {
 
   try {
     const res = await axios.post('/ordens', payload)
-    showToastv('Ordem criada com sucesso!', 1500)
+    Notify.create({ type: 'positive', message: 'Ordem de serviço criada com sucesso!' })
     aviso.value = true
     console.log('✔ OS criada:', res.data)
     limparOs()
@@ -3662,7 +3918,7 @@ async function salvarEdicaoOs() {
   })
   const resultado = await res.json()
   if (res.ok && resultado.success) {
-    showToastv('Ordem de Serviço atualizada com sucesso!')
+    Notify.create({ type: 'positive', message: 'Ordem de Serviço atualizada com sucesso!' })
     ocultar()
     listagemos.value = true
     listarOrdensServico()
@@ -3875,8 +4131,7 @@ async function salvarVendedor() {
       showToast('Erro ao salvar vendedor!', 1500)
       return
     }
-
-    showToastv('Vendedor salvo com sucesso!', 1000)
+    Notify.create({ type: 'positive', message: 'Vendedor salvo com sucesso!' })
     limparFormularioVendedor()
     carregarVendedores()
   } else {
@@ -3900,8 +4155,7 @@ async function salvarVendedor() {
         dataadmissao: vendedor.value.admissao,
       }),
     })
-
-    showToastv('Vendedor atualizado com sucesso!', 1000)
+    Notify.create({ type: 'positive', message: 'Vendedor atualizado com sucesso!' })
     limparFormularioVendedor()
     carregarVendedores()
     ocultar()
