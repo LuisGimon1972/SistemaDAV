@@ -13,8 +13,4 @@ export default function novoVendedor() {
     comissao: 0.0,
     admissao: null,
   }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 364aaacdaea6354ab09fe2ddea8068947970dcd7
