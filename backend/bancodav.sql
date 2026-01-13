@@ -90,6 +90,47 @@ CREATE TABLE IF NOT EXISTS itensorcamento (
         FOREIGN KEY (produtoid) REFERENCES itens(controle)
 );
 
+CREATE TABLE IF NOT EXISTS pedidos (
+    id SERIAL PRIMARY KEY,
+    numero TEXT UNIQUE NOT NULL,
+    clienteid INTEGER NOT NULL,
+    vendedorid INTEGER NOT NULL,
+    datacriacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    previssao TEXT,
+    observacoes TEXT,
+    valordesconto REAL DEFAULT 0,
+    valoracrescimo REAL DEFAULT 0,
+    valortotalitens REAL DEFAULT 0,
+    valortotal REAL DEFAULT 0,
+    status TEXT DEFAULT 'ABERTO',
+    condicao TEXT,
+
+    CONSTRAINT fk_pedido_cliente
+        FOREIGN KEY (clienteid) REFERENCES clientes(id),
+
+    CONSTRAINT fk_pedido_vendedor
+        FOREIGN KEY (vendedorid) REFERENCES vendedor(id)
+);
+
+CREATE TABLE IF NOT EXISTS itenspedido (
+    id SERIAL PRIMARY KEY,
+    pedidoid INTEGER NOT NULL,
+    produtoid INTEGER,
+    descricao TEXT NOT NULL,
+    quantidade REAL NOT NULL,
+    valorunit REAL NOT NULL,
+    total REAL NOT NULL,
+    tipoitem TEXT DEFAULT 'PRODUTO',
+
+    CONSTRAINT fk_item_pedido
+        FOREIGN KEY (pedidoid) REFERENCES pedidos(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_item_produto
+        FOREIGN KEY (produtoid) REFERENCES itens(controle)
+);
+
+
 CREATE TABLE IF NOT EXISTS objetosveiculos (
   id SERIAL PRIMARY KEY,                          -- Usando SERIAL para autoincremento no PostgreSQL
   clienteid INTEGER NOT NULL,

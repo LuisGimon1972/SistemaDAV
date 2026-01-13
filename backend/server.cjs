@@ -1873,6 +1873,191 @@ app.delete('/vendedores/:id', async (req, res) => {
   }
 })
 
+app.post('/pedidos', async (req, res) => {
+  const {
+    numero,
+    clienteid,
+    vendedorid,
+    previsao,
+    observacoes,
+    valordesconto,
+    valoracrescimo,
+    itens,
+  } = req.body
+
+  if (!clienteid || !vendedorid || !itens || itens.length === 0) {
+    return res.status(400).json({ erro: 'Pedido inválido' })
+  }
+
+  const client = await pool.connect()
+
+  try {
+    await client.query('BEGIN')
+
+    const pedidoResult = await client.query(
+      `
+      INSERT INTO pedidos (
+        numero, clienteid, vendedorid, previsao,
+        observacoes, valordesconto, valoracrescimo
+      )
+      VALUES ($1,$2,$3,$4,$5,$6,$7)
+      RETURNING id
+      `,
+      [numero, clienteid, vendedorid, previsao, observacoes, valordesconto, valoracrescimo],
+    )
+
+    const pedidoid = pedidoResult.rows[0].id
+
+    let totalItens = 0
+
+    for (const item of itens) {
+      const total = item.quantidade * item.valorunit
+      totalItens += total
+
+      await client.query(
+        `
+        INSERT INTO itenspedido (
+          pedidoid, produtoid, descricao,
+          quantidade, valorunit, total, tipoitem
+        )
+        VALUES ($1,$2,$3,$4,$5,$6,$7)
+        `,
+        [
+          pedidoid,
+          item.produtoid,
+          item.descricao,
+          item.quantidade,
+          item.valorunit,
+          total,
+          item.tipoitem || 'PRODUTO',
+        ],
+      )
+    }
+
+    const valorTotal = totalItens - (valordesconto || 0) + (valoracrescimo || 0)
+
+    await client.query(
+      `
+      UPDATE pedidos
+      SET valortotalitens = $1, valortotal = $2
+      WHERE id = $3
+      `,
+      [totalItens, valorTotal, pedidoid],
+    )
+
+    await client.query('COMMIT')
+    res.status(201).json({ pedidoid })
+  } catch (err) {
+    await client.query('ROLLBACK')
+    res.status(500).json({ erro: err.message })
+  } finally {
+    client.release()
+  }
+})
+
+app.put('/pedidos/:id', async (req, res) => {
+  const pedidoid = Number(req.params.id)
+  const {
+    clienteid,
+    vendedorid,
+    previsao,
+    observacoes,
+    valordesconto,
+    valoracrescimo,
+    status,
+    itens,
+  } = req.body
+
+  const client = await pool.connect()
+
+  try {
+    await client.query('BEGIN')
+
+    await client.query(
+      `
+      UPDATE pedidos
+      SET clienteid = $1,
+          vendedorid = $2,
+          previsao = $3,
+          observacoes = $4,
+          valordesconto = $5,
+          valoracrescimo = $6,
+          status = $7
+      WHERE id = $8
+      `,
+      [
+        clienteid,
+        vendedorid,
+        previsao,
+        observacoes,
+        valordesconto,
+        valoracrescimo,
+        status,
+        pedidoid,
+      ],
+    )
+
+    await client.query('DELETE FROM itenspedido WHERE pedidoid = $1', [pedidoid])
+
+    let totalItens = 0
+
+    for (const item of itens) {
+      const total = item.quantidade * item.valorunit
+      totalItens += total
+
+      await client.query(
+        `
+        INSERT INTO itenspedido (
+          pedidoid, produtoid, descricao,
+          quantidade, valorunit, total, tipoitem
+        )
+        VALUES ($1,$2,$3,$4,$5,$6,$7)
+        `,
+        [
+          pedidoid,
+          item.produtoid,
+          item.descricao,
+          item.quantidade,
+          item.valorunit,
+          total,
+          item.tipoitem || 'PRODUTO',
+        ],
+      )
+    }
+
+    const valorTotal = totalItens - (valordesconto || 0) + (valoracrescimo || 0)
+
+    await client.query(
+      `
+      UPDATE pedidos
+      SET valortotalitens = $1, valortotal = $2
+      WHERE id = $3
+      `,
+      [totalItens, valorTotal, pedidoid],
+    )
+
+    await client.query('COMMIT')
+    res.json({ sucesso: true })
+  } catch (err) {
+    await client.query('ROLLBACK')
+    res.status(500).json({ erro: err.message })
+  } finally {
+    client.release()
+  }
+})
+
+app.delete('/pedidos/:id', async (req, res) => {
+  const pedidoid = Number(req.params.id)
+
+  try {
+    await pool.query('DELETE FROM pedidos WHERE id = $1', [pedidoid])
+
+    res.json({ sucesso: true })
+  } catch (err) {
+    res.status(500).json({ erro: err.message })
+  }
+})
+
 // ==========================================
 //  INICIAR SERVIDOR
 // ==========================================

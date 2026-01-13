@@ -1154,7 +1154,7 @@
             <div class="col-4">
               <q-input
                 filled
-                v-model.number="desconto"
+                v-model.number="valordesconto"
                 type="number"
                 label="Desconto (R$)"
                 class="label-grande"
@@ -1163,7 +1163,7 @@
             <div class="col-4">
               <q-input
                 filled
-                v-model.number="acrescimo"
+                v-model.number="valoracrescimo"
                 type="number"
                 @keyup.enter="atualizarTotaisOs"
                 label="Acréscimo (R$)"
@@ -2666,6 +2666,8 @@ const colunasOrcamento = [
 
 const desconto = ref(0)
 const acrescimo = ref(0)
+const valordesconto = ref(0)
+const valoracrescimo = ref(0)
 
 const totalGeral = ref(0)
 //Pegar dados
@@ -4193,6 +4195,44 @@ function formatarMoeda(valor) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })
+}
+
+watch(valordesconto, () => {
+  atualizarTotaispv()
+})
+
+watch(valoracrescimo, () => {
+  atualizarTotaispv()
+})
+
+function atualizarTotaispv() {
+  const VALOR_MINIMO = 0.01
+  const subtotal = itensOrcamento.value.reduce((acc, i) => {
+    i.total = Number(i.quantidade) * Number(i.valorunit)
+    return acc + i.total
+  }, 0)
+  const acrescimoNum = Number(acrescimo.value) || 0
+  let descontoNum = Number(desconto.value) || 0
+  const totalBase = subtotal + acrescimoNum
+  const descontoMaximo = Math.max(0, totalBase - VALOR_MINIMO)
+  // 🔒 Regras só quando NÃO for orçamento
+  if (!entrarOrcamento.value) {
+    if (descontoNum > descontoMaximo) {
+      descontoNum = descontoMaximo
+      desconto.value = descontoNum.toFixed(2)
+      showToast('O desconto informado é maior que o permitido e foi reajustado!', 3000)
+      if (acrescimoRef.value) {
+        setTimeout(() => {
+          acrescimoRef.value.focus()
+        }, 50)
+      }
+    }
+  }
+  // 🧮 Total final
+  if (!limpar.value) {
+    const totalFinal = totalBase - descontoNum
+    totalGeral.value = Math.max(VALOR_MINIMO, totalFinal)
+  }
 }
 
 /* ✔️ ao sair do campo */
