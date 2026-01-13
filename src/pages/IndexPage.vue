@@ -20,6 +20,7 @@
           @click="
             () => {
               ocultar()
+              titulo = 'Novo Cliente'
               mostrarCadastro = true
               menuAtivo = 'cadastro'
             }
@@ -55,6 +56,7 @@
           @click="
             () => {
               ocultar()
+              titulo = 'Novo Produto'
               menuAtivo = 'cadastroitem'
               mostrarItens = true
             }
@@ -227,7 +229,7 @@
           @click="
             () => {
               davmenuOs = !davmenuOs
-              davmenuOrcamento = false              
+              davmenuOrcamento = false
               davmenuPv = false
               menuAtivo = 'submenuos'
             }
@@ -285,12 +287,12 @@
               @click="
                 () => {
                   ocultar()
-                  limparOs()                  
+                  limparOs()
                   trocartituloOs()
                   desabilitarTudo = false
                   orcamentodav = false
                   cadastraros = true
-                  aviso = true;
+                  aviso = true
                   entrarOrcamento = false
                   menuAtivo = 'cadastrooser'
                 }
@@ -321,7 +323,6 @@
             </q-item>
           </div>
         </q-slide-transition>
-          
 
         <q-item
           clickable
@@ -329,8 +330,8 @@
           active-class="item-ativo"
           @click="
             () => {
-              davmenuPv = !davmenuPv              
-              davmenuOrcamento = false              
+              davmenuPv = !davmenuPv
+              davmenuOrcamento = false
               davmenuOs = false
               menuAtivo = 'submenupv'
             }
@@ -354,7 +355,8 @@
               @click="
                 () => {
                   ocultar()
-                  mostrarCadastroser = true
+                  trocartituloPv()
+                  cadastroVendedor = true
                   menuAtivo = 'cadastrovendedor'
                 }
               "
@@ -371,7 +373,7 @@
               @click="
                 () => {
                   ocultar()
-                  mostrarservicos = true
+                  listarVendedores = true
                   menuAtivo = 'listadovendedores'
                 }
               "
@@ -388,12 +390,12 @@
               @click="
                 () => {
                   ocultar()
-                  limparOs()                  
+                  limparOs()
                   trocartituloOs()
                   desabilitarTudo = false
                   orcamentodav = false
                   cadastraros = true
-                  aviso = true;
+                  aviso = true
                   entrarOrcamento = false
                   menuAtivo = 'cadastropv'
                 }
@@ -424,10 +426,8 @@
             </q-item>
           </div>
         </q-slide-transition>
-
       </div>
 
-      
       <!-- CONTEÚDO PRINCIPAL -->
       <div class="conteudo" style="flex-grow: 1; padding: 20px">
         <!-- ===================== -->
@@ -899,9 +899,9 @@
               <q-input
                 filled
                 v-model.number="desconto"
-                type="number"                
+                type="number"
                 label="Desconto (R$)"
-                class="label-grande"                
+                class="label-grande"
               />
             </div>
             <div class="col-4">
@@ -1110,12 +1110,175 @@
           </q-table>
         </div>
 
+        <div v-if="cadastroVendedor">
+          <q-page padding>
+            <q-card class="q-pa-md">
+              <q-card-section>
+                <div style="margin-bottom: 50px" class="text-h4 text-primary q-mb-md">
+                  {{ titulo }}
+                </div>
+                <q-form @submit.prevent="salvarVendedor">
+                  <div class="flex gap-2">
+                    <div class="col">
+                      <q-input
+                        ref="cpfInput"
+                        outlined
+                        color="black"
+                        class="w-1/3 dark-border"
+                        v-model="vendedor.cpf"
+                        label="CPF"
+                        mask="###.###.###-##"
+                      />
+                    </div>
+                    <div class="col">
+                      <q-input
+                        ref="nomeInput"
+                        outlined
+                        color="black"
+                        class="w-1/3 dark-border"
+                        v-model="vendedor.nome"
+                        @update:model-value="(val) => (vendedor.nome = val.toUpperCase())"
+                        label="Nome Completo"
+                        maxlength="50"
+                      />
+                    </div>
+                    <div class="col">
+                      <q-input
+                        ref="cepInput"
+                        outlined
+                        color="black"
+                        class="dark-border"
+                        v-model="vendedor.cep"
+                        label="CEP"
+                        mask="#####-###"
+                        @update:model-value="buscarCep"
+                      />
+                    </div>
+                  </div>
+                  <div class="flex gap-2">
+                    <div style="width: 35%">
+                      <q-input
+                        outlined
+                        color="black"
+                        class="w-1/3 dark-border"
+                        v-model="vendedor.endereco"
+                        label="Endereço"
+                        @keydown.prevent
+                      />
+                    </div>
+                    <div style="width: 25%">
+                      <q-input
+                        outlined
+                        color="black"
+                        class="w-1/3 dark-border"
+                        v-model="vendedor.bairro"
+                        @update:model-value="(val) => (vendedor.bairro = val.toUpperCase())"
+                        label="Bairro"
+                        @keydown.prevent
+                      />
+                    </div>
+                    <div style="width: 25%">
+                      <q-input
+                        outlined
+                        color="black"
+                        class="w-1/3 dark-border"
+                        v-model="vendedor.email"
+                        @update:model-value="(val) => (vendedor.email = val.toLowerCase())"
+                        label="Email"
+                        clearable
+                        lazy-rules
+                        :rules="[
+                          (val) => !!val || 'Campo obrigatório',
+                          (val) => /.+@.+\..+/.test(val) || 'E-mail inválido',
+                        ]"
+                        maxlength="100"
+                      />
+                    </div>
+                    <div style="width: 15%">
+                      <q-input
+                        outlined
+                        color="black"
+                        class="w-1/3 dark-border"
+                        v-model="vendedor.telefone"
+                        label="Telefone"
+                        mask="(##)####.####"
+                      />
+                    </div>
+                  </div>
+                  <div style="margin-top: -20px" class="flex">
+                    <div style="width: 25%">
+                      <q-input
+                        outlined
+                        color="black"
+                        class="dark-border"
+                        v-model="vendedor.celular"
+                        label="Celular"
+                        mask="(##)#####.####"
+                      />
+                    </div>
+                    <div style="width: 25%">
+                      <q-input
+                        outlined
+                        class="dark-border"
+                        label="Salário Base"
+                        v-model="salarioFormatado"
+                        @blur="formatarSalario"
+                        inputmode="decimal"
+                      />
+                    </div>
+                    <div style="width: 25%">
+                      <q-input
+                        ref="limiteInput"
+                        outlined
+                        color="black"
+                        class="dark-border"
+                        v-model.number="vendedor.comissao"
+                        label="Comissão %"
+                        type="number"
+                        @input="validarDecimal2('comissao')"
+                      />
+                    </div>
+                    <div style="width: 25%">
+                      <q-input
+                        outlined
+                        color="black"
+                        v-model="admissao"
+                        label="Data de admissão"
+                        class="dark-border"
+                        @click="abrirCalendario"
+                      >
+                        <template #append>
+                          <q-icon name="event" class="cursor-pointer" @click="abrirCalendario" />
+                        </template>
+
+                        <q-popup-proxy
+                          ref="popupValidade"
+                          transition-show="scale"
+                          transition-hide="scale"
+                        >
+                          <q-date v-model="admissao" mask="DD-MM-YYYY" />
+                        </q-popup-proxy>
+                      </q-input>
+                    </div>
+                  </div>
+                  <div class="q-gutter-md q-mt-md text-center">
+                    <q-btn label="Salvar" type="submit" color="primary" icon="save" />
+                    <q-btn label="Limpar" flat icon="refresh" @click="limparFormularioVendedor" />
+                  </div>
+                </q-form>
+              </q-card-section>
+            </q-card>
+          </q-page>
+        </div>
+
         <!-- MODULO CADASTRO -->
         <div v-if="mostrarCadastro">
           <q-page padding>
             <q-card class="q-pa-md">
               <q-card-section>
-                <div class="text-h4 text-blue-8 q-mb-lg">Cadastro de Clientes</div>
+                <div style="margin-bottom: 50px" class="text-h4 text-primary q-mb-md">
+                  {{ titulo }}
+                </div>
                 <q-form @submit.prevent="salvarCliente">
                   <div class="flex gap-2">
                     <div class="col">
@@ -1386,6 +1549,37 @@
           </q-table>
         </div>
 
+        <div v-if="listarVendedores">
+          <q-table
+            title="Listagem de Vendedores"
+            :rows="vendedores"
+            :columns="colunasvendedor"
+            row-key="id"
+            class="q-mt-md"
+            dense
+            title-class="text-h4 text-primary q-pa-md"
+            :pagination="{ page: 1, rowsPerPage: 14 }"
+          >
+            <template v-slot:body-cell-acoes="props">
+              <q-td align="center">
+                <q-btn
+                  size="sm"
+                  color="warning"
+                  icon="edit"
+                  @click="(editarVendedor(props.row), (cadastroVendedor = true))"
+                />
+                <q-btn
+                  size="sm"
+                  color="negative"
+                  icon="delete"
+                  @click="excluirVendedor(props.row.id)"
+                />
+              </q-td>
+            </template>
+            <template #no-data />
+          </q-table>
+        </div>
+
         <div v-if="mostrarservicos">
           <q-table
             title="Listagem de Serviços"
@@ -1421,7 +1615,9 @@
           <q-page padding>
             <q-card class="q-pa-md">
               <q-card-section>
-                <div class="text-h4 text-blue-8 q-mb-lg">Cadastro de Itens</div>
+                <div style="margin-bottom: 50px" class="text-h4 text-primary q-mb-md">
+                  {{ titulo }}
+                </div>
                 <q-form @submit.prevent="salvarItem">
                   <div class="flex gap-2">
                     <div class="col">
@@ -1665,6 +1861,7 @@ import usuario from 'src/assets/usuario.png'
 import { imprimirOrcamentoPorId, imprimirOsPorId } from 'src/utils/impressao.js'
 import { ref, onMounted, watch, nextTick } from 'vue'
 import novoCliente from 'src/models/Cliente'
+import novoVendedor from 'src/models/Vendedor'
 import novoItem from 'src/models/Item'
 import axios from 'axios'
 import { Dialog, Notify } from 'quasar'
@@ -1681,7 +1878,9 @@ const $q = useQuasar()
 
 const API_URL = 'http://localhost:3000'
 const cliente = ref(novoCliente())
+const vendedor = ref(novoVendedor())
 const clientes = ref([])
+const vendedores = ref([])
 const item = ref(novoItem())
 const itens = ref([])
 const servicos = ref([])
@@ -1700,6 +1899,7 @@ const quanInput = ref(null)
 const custoInput = ref(null),
   vendaInput = ref(null)
 const mostrarCadastro = ref(false)
+const cadastroVendedor = ref(false)
 const mostrarCadastroser = ref(false)
 const mostrarservicos = ref(false)
 const cadastraros = ref(false)
@@ -1707,6 +1907,7 @@ const listagemos = ref(false)
 const mostrarItens = ref(false)
 const listarItens = ref(false)
 const listarClientes = ref(false)
+const listarVendedores = ref(false)
 const listarDividas = ref(false)
 const resumoDividas = ref(false)
 const resultadoBusca = ref([])
@@ -1718,6 +1919,7 @@ const aviso = ref(false)
 const limpar = ref(false)
 const condicao = ref(null)
 const validade = ref(null)
+const admissao = ref(null)
 const menuAtivo = ref(null)
 const titulo = ref(null)
 const cepcerto = ref(null)
@@ -1739,7 +1941,9 @@ function ocultar() {
   mostrarservicos.value = false
   listagemos.value = false
   cadastraros.value = false
+  cadastroVendedor.value = false
   listarClientes.value = false
+  listarVendedores.value = false
   mostrarItens.value = false
   mostrarFormObjetos.value = false
   listarItens.value = false
@@ -1839,6 +2043,8 @@ const buscarCep = async (val) => {
     //cliente.value.estado = res.data.uf || ''
     cliente.value.bairro = res.data.bairro.toUpperCase() || ''
     cliente.value.endereco = res.data.logradouro.toUpperCase() || ''
+    vendedor.value.bairro = res.data.bairro.toUpperCase() || ''
+    vendedor.value.endereco = res.data.logradouro.toUpperCase() || ''
     cepcerto.value = true
   } catch (err) {
     console.error('Erro ao buscar CEP', err)
@@ -1940,10 +2146,62 @@ async function excluirCliente(id) {
   })
 }
 
+async function excluirVendedor(id) {
+  Dialog.create({
+    title: 'Excluir Cliente',
+    message:
+      'Tem certeza que deseja excluir esse vendedor? Essa ação <b>não poderá ser desfeita</b>.',
+    html: true,
+    icon: 'warning',
+    ok: {
+      label: 'Sim, excluir',
+      color: 'negative',
+      unelevated: true,
+    },
+    cancel: {
+      label: 'Cancelar',
+      flat: true,
+      color: 'grey-8',
+    },
+    persistent: true,
+  }).onOk(async () => {
+    try {
+      await fetch(`${API_URL}/vendedores/${id}`, { method: 'DELETE' })
+      Notify.create({ type: 'positive', message: 'Vendedor excluído com sucesso.' })
+      carregarVendedores()
+    } catch (err) {
+      console.error('Erro ao excluir vendedor:', err)
+      Notify.create({ type: 'negative', message: 'Erro ao excluir vendedor. Verifique a conexão.' })
+    }
+  })
+}
+
 async function editarCliente(c) {
+  titulo.value = 'Atualizar dados do cliente'
   cliente.value = { ...c }
   const res = await fetch(`${API_URL}/clientes/${c.id}/objetos`)
   objetos.value = await res.json()
+}
+
+async function editarVendedor(c) {
+  titulo.value = 'ATUALIZAR DADOS VENDEDOR'
+  try {
+    const res = await fetch(`${API_URL}/vendedores/${c.id}`)
+    if (!res.ok) throw new Error()
+
+    const data = await res.json()
+
+    vendedor.value = {
+      ...data,
+      admissao: data.dataadmissao
+        ? data.dataadmissao.split('-').reverse().join('-') // YYYY-MM-DD → DD-MM-YYYY
+        : '',
+    }
+    admissao.value = data.dataadmissao
+  } catch (err) {
+    console.error(err)
+    showToast('Erro ao carregar vendedor', 1500)
+  }
 }
 
 function decimalParaHhmm(valor) {
@@ -2072,6 +2330,7 @@ async function excluirItem(controle) {
 }
 
 function editarItem(i) {
+  titulo.value = 'Atualizar dados do produto'
   item.value = { ...i }
 }
 
@@ -2172,7 +2431,7 @@ watch(
     celCliente.value = cliente?.celular || ''
     telCliente.value = cliente?.telefone || ''
     emailCliente.value = cliente?.email || ''
-  },  
+  },
 )
 
 function navegarLista(event) {
@@ -2280,7 +2539,7 @@ function excluirItemOrç(index) {
 // Atualizar totais
 
 function atualizarTotais() {
-  const VALOR_MINIMO = 0.01  
+  const VALOR_MINIMO = 0.01
   const subtotal = itensOrcamento.value.reduce((acc, i) => {
     i.total = Number(i.quantidade) * Number(i.valorunit)
     return acc + i.total
@@ -2294,32 +2553,27 @@ function atualizarTotais() {
     if (descontoNum > descontoMaximo) {
       descontoNum = descontoMaximo
       desconto.value = descontoNum.toFixed(2)
-      showToast(
-        'O desconto informado é maior que o permitido e foi reajustado!',
-        3000
-      )
+      showToast('O desconto informado é maior que o permitido e foi reajustado!', 3000)
       if (acrescimoRef.value) {
         setTimeout(() => {
           acrescimoRef.value.focus()
         }, 50)
       }
-    } 
+    }
   }
   // 🧮 Total final
-  if(!limpar.value)
-  {
-  const totalFinal = totalBase - descontoNum
-  totalGeral.value = Math.max(VALOR_MINIMO, totalFinal)  
+  if (!limpar.value) {
+    const totalFinal = totalBase - descontoNum
+    totalGeral.value = Math.max(VALOR_MINIMO, totalFinal)
   }
 }
 
-
 watch(desconto, () => {
   debugger
-  if (orcamentodav.value==true) {        
+  if (orcamentodav.value == true) {
     atualizarTotais()
-  } else {        
-    atualizarTotaisOs()    
+  } else {
+    atualizarTotaisOs()
   }
 })
 
@@ -2346,8 +2600,8 @@ watch(adiantamento, () => {
 }*/
 
 async function salvarOrcamento() {
-  debugger   
-  //entrarOrcamento.value = true 
+  debugger
+  //entrarOrcamento.value = true
   if (!clienteSelecionado.value) {
     showToast('Selecione um cliente!', 3000)
     return
@@ -2407,7 +2661,7 @@ async function salvarOrcamento() {
   } catch (error) {
     console.error('Erro ao salvar orçamento:', error)
     showToast('Erro ao salvar orçamento!', 3000)
-  }    
+  }
 }
 
 async function limparOrcamento() {
@@ -2596,7 +2850,7 @@ const idOrcamentoEdicao = ref(null)
 
 const editarOrcamento = async (row) => {
   // debugger
-  //entrarOrcamento.value = true
+
   if (row.status?.toLowerCase() === 'finalizado') {
     showToast('Este orçamento está Finalizado e não pode ser editado!', 2000)
     return
@@ -2669,7 +2923,7 @@ async function carregarItensDoOrcamento(id) {
 }
 
 async function salvarEdicao() {
-  debugger    
+  debugger
   if (!idOrcamentoEdicao.value) {
     showToast('Orçamento inválido para edição')
     return
@@ -2705,7 +2959,7 @@ async function salvarEdicao() {
   } catch (erro) {
     console.error('Erro ao atualizar orçamento:', erro)
     showToast(erro.message || 'Erro ao atualizar orçamento')
-  }    
+  }
 }
 
 async function parseJsonSeguro(res) {
@@ -3181,6 +3435,10 @@ function trocartituloOs() {
   titulo.value = 'NOVA ORDEM DE SERVIÇO'
 }
 
+function trocartituloPv() {
+  titulo.value = 'NOVO VENDEDOR'
+}
+
 function editarServico(i) {
   item.value = {
     ...i,
@@ -3196,7 +3454,7 @@ function excluirItemOs(index) {
 
 function adicionarItemOs(item) {
   orcamentodav.value = false
-  aviso.value = false  
+  aviso.value = false
   if (!item) return
   const existente = itensOrdemos.value.find((i) => i.produtoid === item.controle)
   if (existente) {
@@ -3217,7 +3475,7 @@ function adicionarItemOs(item) {
   itemSelecionado.value = -1
 }
 
-function atualizarTotaisOs() {  
+function atualizarTotaisOs() {
   const VALOR_MINIMO = 0.01
   const subtotal = itensOrdemos.value.reduce((acc, i) => {
     i.total = Number(i.quantidade) * Number(i.valorunitario)
@@ -3228,17 +3486,15 @@ function atualizarTotaisOs() {
   let adiantamentoNum = Number(adiantamento.value) || 0
   const totalBase = subtotal + acrescimoNum
   // 🔒 Reajuste direto: desconto maior que total
-  if(!aviso.value)
-  {
-  if (descontoNum >= totalBase && !entrarOrcamento.value ) {
-    descontoNum = totalBase - VALOR_MINIMO
-    desconto.value = descontoNum.toFixed(2)
-    showToast('Desconto reajustado para manter o valor mínimo da fatura.', 3000)  
-  }  
-  const totalFinal = totalBase - descontoNum - adiantamentoNum
-  totalGeral.value = Math.max(VALOR_MINIMO, totalFinal)
+  if (!aviso.value) {
+    if (descontoNum >= totalBase && !entrarOrcamento.value) {
+      descontoNum = totalBase - VALOR_MINIMO
+      desconto.value = descontoNum.toFixed(2)
+      showToast('Desconto reajustado para manter o valor mínimo da fatura.', 3000)
+    }
+    const totalFinal = totalBase - descontoNum - adiantamentoNum
+    totalGeral.value = Math.max(VALOR_MINIMO, totalFinal)
   }
-  
 }
 
 async function limparOs() {
@@ -3502,7 +3758,8 @@ watch(clienteSelecionado, async (novoCliente) => {
 
   try {
     const statusOs = item.value.status
-    const usarRotaCompleta = statusOs === 'CANCELADA' || statusOs === 'FINALIZADA' || criarOrcamento.value
+    const usarRotaCompleta =
+      statusOs === 'CANCELADA' || statusOs === 'FINALIZADA' || criarOrcamento.value
     const url = usarRotaCompleta
       ? `/clientesos/${novoCliente}/objetos`
       : `/clientes/${novoCliente}/objetos`
@@ -3540,6 +3797,166 @@ function formatarPlacaSerie() {
   }
 
   // Caso não seja placa → considera SÉRIE (não mexe)
+}
+
+///////Pedido de Venda
+const colunasvendedor = [
+  { name: 'cpf', label: 'CPF', field: 'cpf', align: 'left' },
+  { name: 'nome', label: 'Nome', field: 'nome', align: 'left' },
+  { name: 'endereco', label: 'Endereço', field: 'endereco', align: 'left' },
+  { name: 'email', label: 'Email', field: 'email', align: 'left' },
+  { name: 'telefone', label: 'Telefone', field: 'telefone', align: 'left' },
+  { name: 'celular', label: 'Celular', field: 'celular', align: 'left' },
+  { name: 'acoes', label: 'Ações', field: 'acoes', align: 'center' },
+]
+
+async function salvarVendedor() {
+  // 🔒 Validações básicas
+
+  if (!vendedor.value.cpf) {
+    showToast('CPF é obrigatório!', 1000)
+    return cpfInput.value?.focus()
+  }
+  if (!vendedor.value.nome) {
+    showToast('Nome é obrigatório!', 1000)
+    return nomeInput.value?.focus()
+  }
+
+  if (admissao.value) {
+    const [dia, mes, ano] = admissao.value.split('-')
+    const dataFormatada = `${ano}-${mes}-${dia}`
+    const hoje = new Date()
+    hoje.setHours(0, 0, 0, 0)
+    const dataAdmissao = new Date(dataFormatada + 'T00:00:00')
+    if (dataAdmissao > hoje) {
+      showToast('A data de admissão não pode ser maior que a data atual!', 1500)
+      return
+    }
+  }
+
+  if (cepcerto.value === false) {
+    showToast('Preencha um CEP correto!', 1000)
+    vendedor.value.cep = ''
+    return cepInput.value?.focus()
+  }
+
+  /* =========================
+     🔹 NOVO VENDEDOR (POST)
+     ========================= */
+  if (!vendedor.value.id) {
+    // 🔍 verifica CPF duplicado
+    const vendedoresExistentes = await fetch(`${API_URL}/vendedores`).then((res) => res.json())
+
+    const cpfDuplicado = vendedoresExistentes.find((v) => v.cpf === vendedor.value.cpf)
+
+    if (cpfDuplicado) {
+      showToast('Já existe um vendedor com este CPF!', 1500)
+      return cpfInput.value?.focus()
+    }
+
+    const res = await fetch(`${API_URL}/vendedores`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cpf: vendedor.value.cpf,
+        nome: vendedor.value.nome,
+        endereco: vendedor.value.endereco,
+        email: vendedor.value.email,
+        telefone: vendedor.value.telefone,
+        celular: vendedor.value.celular,
+        cep: vendedor.value.cep,
+        bairro: vendedor.value.bairro,
+        salario: vendedor.value.salario,
+        comissao: vendedor.value.comissao,
+        dataadmissao: admissao.value, // 🔑 backend espera dataadmissao
+      }),
+    })
+
+    if (!res.ok) {
+      showToast('Erro ao salvar vendedor!', 1500)
+      return
+    }
+
+    showToastv('Vendedor salvo com sucesso!', 1000)
+    limparFormularioVendedor()
+    carregarVendedores()
+  } else {
+    /* =========================
+     🔹 ATUALIZA VENDEDOR (PUT)
+     ========================= */
+    await fetch(`${API_URL}/vendedores/${vendedor.value.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cpf: vendedor.value.cpf,
+        nome: vendedor.value.nome,
+        endereco: vendedor.value.endereco,
+        email: vendedor.value.email,
+        telefone: vendedor.value.telefone,
+        celular: vendedor.value.celular,
+        cep: vendedor.value.cep,
+        bairro: vendedor.value.bairro,
+        salario: vendedor.value.salario,
+        comissao: vendedor.value.comissao,
+        dataadmissao: vendedor.value.admissao,
+      }),
+    })
+
+    showToastv('Vendedor atualizado com sucesso!', 1000)
+    limparFormularioVendedor()
+    carregarVendedores()
+    ocultar()
+    listarVendedores.value = true
+  }
+}
+
+function limparFormularioVendedor() {
+  vendedor.value = novoVendedor()
+  admissao.value = ''
+  cpfInput.value.focus()
+}
+
+async function carregarVendedores() {
+  const res = await fetch(`${API_URL}/vendedores`)
+  vendedores.value = await res.json()
+}
+
+const salarioFormatado = ref('')
+
+/* 🔄 sincroniza quando editar */
+watch(
+  () => vendedor.value.salario,
+  (val) => {
+    if (val !== null && val !== undefined) {
+      salarioFormatado.value = formatarMoeda(val)
+    }
+  },
+  { immediate: true },
+)
+
+/* 💰 formatação visual */
+function formatarMoeda(valor) {
+  return Number(valor).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+}
+
+/* ✔️ ao sair do campo */
+function formatarSalario() {
+  let valor = salarioFormatado.value
+
+  if (!valor) {
+    vendedor.value.salario = 0
+    salarioFormatado.value = '0,00'
+    return
+  }
+
+  valor = valor.replace(/\./g, '').replace(',', '.')
+  const num = Number(valor)
+
+  vendedor.value.salario = isNaN(num) ? 0 : num
+  salarioFormatado.value = formatarMoeda(vendedor.value.salario)
 }
 
 /////////////////////////////
@@ -3595,6 +4012,15 @@ function validarDecimal(campo) {
   item.value[campo] = isNaN(num) ? 0 : num
 }
 
+function validarDecimal2(campo) {
+  let valor = vendedor.value[campo]
+  if (typeof valor === 'string') {
+    valor = valor.replace(',', '.')
+  }
+  const num = parseFloat(valor)
+  vendedor.value[campo] = isNaN(num) ? 0 : num
+}
+
 function bemvinda() {
   const dlg = Dialog.create({
     message: `
@@ -3622,6 +4048,7 @@ onMounted(() => {
   carregarOrcamento()
   carregaraClientes()
   listarOrdensServico()
+  carregarVendedores()
 })
 
 onMounted(async () => {
@@ -3633,4 +4060,3 @@ onMounted(async () => {
   }
 })
 </script>
-<style scoped></style>
