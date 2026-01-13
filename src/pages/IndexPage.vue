@@ -1059,7 +1059,7 @@
           <q-input
             v-model="buscaItem"
             label="Buscar item"
-            @keyup="navegarListaOs"
+            @keyup="navegarListaPv"
             class="input-grande"
           >
             <template #append>
@@ -1100,11 +1100,10 @@
 
           <q-separator spaced />
 
-          <!-- TABELA ITENS DE SERVICO -->
           <q-table
-            title="Itens da Ordem de Serviço"
-            :rows="itensOrdemos"
-            :columns="colunasOrdemos"
+            title="Itens do Pedido de Venda"
+            :rows="itensPedido"
+            :columns="colunasPedItem"
             row-key="controle"
             flat
             bordered
@@ -1117,7 +1116,7 @@
                   v-model.number="props.row.quantidade"
                   min="1"
                   style="width: 80px"
-                  @update:model-value="atualizarTotaisOs"
+                  @update:model-value="atualizarTotaisPv"
                 />
               </q-td>
             </template>
@@ -2634,6 +2633,7 @@ const celCliente = ref('')
 const telCliente = ref('')
 const emailCliente = ref('')
 const itensOrcamento = ref([])
+const itensPedido = ref([])
 const itensOrdemos = ref([])
 const itemSelecionado = ref(-1)
 const acrescimoRef = ref(null)
@@ -3514,6 +3514,43 @@ const colunasOrdemos = [
   { name: 'acoes', label: 'Ações', field: 'controle', align: 'center' },
 ]
 
+const colunasPedItem = [
+  {
+    name: 'nome',
+    label: 'Item',
+    field: 'nome',
+    align: 'left',
+    style: 'width: 40%',
+    headerStyle: 'text-align: left',
+  },
+  {
+    name: 'quantidade',
+    label: 'Quantidade',
+    field: 'quantidade',
+    align: 'center',
+    style: 'width: 50px; text-align: right',
+    headerStyle: 'text-align: left',
+  },
+  {
+    name: 'valorunit',
+    label: 'Valor Unit.',
+    field: 'valorunit',
+    align: 'right',
+    style: 'width: 120px; text-align: right',
+    headerStyle: 'text-align: right',
+  },
+  {
+    name: 'total',
+    label: 'Total',
+    field: 'total',
+    align: 'right',
+    style: 'width: 120px; text-align: right; font-weight: bold',
+    headerStyle: 'text-align: right',
+    format: (val) => Number(val).toFixed(2),
+  },
+  { name: 'acoes', label: 'Ações', field: 'controle', align: 'center' },
+]
+
 const columns = [
   { name: 'tipo', label: 'Tipo', field: 'tipo' },
   { name: 'marca', label: 'Marca', field: 'marca' },
@@ -4284,7 +4321,7 @@ async function salvarPedido() {
     valortotalitens: totalItens,
     valortotal: valorTotalFinal,
     status: 'ABERTO',
-    itens: itensOrcamento.value.map((item) => ({
+    itens: itensPedido.value.map((item) => ({
       produtoid: item.produtoid,
       descricao: item.descricao,
       quantidade: item.quantidade,
@@ -4312,6 +4349,52 @@ async function salvarPedido() {
     console.error('Erro ao salvar pedido:', error)
     showToast('Erro ao salvar pedido!', 3000)
   }
+}
+
+function navegarListaPv(event) {
+  if (event.key === 'Enter') {
+    if (itemSelecionado.value < 0) {
+      buscarItem()
+    } else {
+      adicionarItemPv(resultadoBusca.value[itemSelecionado.value])
+    }
+    return
+  }
+  const total = resultadoBusca.value.length
+
+  if (total === 0) return
+
+  if (event.key === 'ArrowDown') {
+    itemSelecionado.value = (itemSelecionado.value + 1) % total
+  }
+
+  if (event.key === 'ArrowUp') {
+    itemSelecionado.value = (itemSelecionado.value - 1 + total) % total
+  }
+
+  if (event.key === 'Enter') {
+    if (itemSelecionado.value >= 0) {
+      adicionarItemPv(resultadoBusca.value[itemSelecionado.value])
+    } else {
+      buscarItem()
+    }
+  }
+}
+
+function adicionarItemPv(item) {
+  orcamentodav.value = true
+  if (!item) return
+  itensPedido.value.push({
+    produtoid: item.controle,
+    nome: item.nome,
+    quantidade: 1,
+    valorunit: item.precovenda,
+    total: item.precovenda,
+  })
+  atualizarTotaispv()
+  resultadoBusca.value = []
+  buscaItem.value = ''
+  itemSelecionado.value = -1
 }
 
 /* ✔️ ao sair do campo */
