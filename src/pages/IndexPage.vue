@@ -1572,11 +1572,18 @@
                   size="sm"
                   color="negative"
                   icon="delete"
+<<<<<<< HEAD
                   @click="excluirVendedor(props.row.id)"
                 />
               </q-td>
             </template>
             <template #no-data />
+=======
+                  @click="excluirCliente(props.row.id)"
+                />
+              </q-td>
+            </template>
+>>>>>>> 364aaacdaea6354ab09fe2ddea8068947970dcd7
           </q-table>
         </div>
 
