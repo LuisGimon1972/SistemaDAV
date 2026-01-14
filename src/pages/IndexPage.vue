@@ -999,7 +999,7 @@
             <div class="col-12 col-md-2">
               <q-input
                 filled
-                v-model="validade"
+                v-model="previssao"
                 label="Previssão de Entrega"
                 readonly
                 class="sem-linha"
@@ -1079,7 +1079,7 @@
               v-for="(item, index) in resultadoBusca"
               :key="item.controle ?? index"
               clickable
-              @click="adicionarItemOs(item)"
+              @click="adicionarItemPv(item)"
               :class="{ 'bg-blue-2': index === itemSelecionado }"
             >
               <q-item-section>
@@ -1116,7 +1116,7 @@
                   v-model.number="props.row.quantidade"
                   min="1"
                   style="width: 80px"
-                  @update:model-value="atualizarTotaisPv"
+                  @update:model-value="atualizarTotaispv"
                 />
               </q-td>
             </template>
@@ -1141,20 +1141,10 @@
 
           <q-input
             filled
-            v-model="observacao"
+            v-model="observacoes"
             type="textarea"
             autogrow
             label="Observação"
-            class="q-mt-md"
-            :input-style="{ minHeight: '70px' }"
-          />
-
-          <q-input
-            filled
-            v-model="condicao"
-            type="textarea"
-            autogrow
-            label="Laudo Técnico"
             class="q-mt-md"
             :input-style="{ minHeight: '70px' }"
           />
@@ -1180,18 +1170,6 @@
                 @keyup.enter="atualizarTotaisOs"
                 label="Acréscimo (R$)"
                 class="label-grande"
-              />
-            </div>
-
-            <div class="col-4">
-              <q-input
-                filled
-                v-model.number="adiantamento"
-                type="number"
-                @keyup.enter="atualizarTotaisOs"
-                label="Adiantamento (R$)"
-                class="label-grande"
-                @blur="atualizarTotaisOs"
               />
             </div>
           </div>
@@ -2181,12 +2159,14 @@ const resumoDividas = ref(false)
 const resultadoBusca = ref([])
 const buscaItem = ref('')
 const observacao = ref(null)
+const observacoes = ref(null)
 const adiantamento = ref(0)
 const orcamentodav = ref(false)
 const aviso = ref(false)
 const limpar = ref(false)
 const condicao = ref(null)
 const validade = ref(null)
+const previssao = ref(null)
 const admissao = ref(null)
 const menuAtivo = ref(null)
 const titulo = ref(null)
@@ -4258,7 +4238,7 @@ watch(valoracrescimo, () => {
 
 function atualizarTotaispv() {
   const VALOR_MINIMO = 0.01
-  const subtotal = itensOrcamento.value.reduce((acc, i) => {
+  const subtotal = itensPedido.value.reduce((acc, i) => {
     i.total = Number(i.quantidade) * Number(i.valorunit)
     return acc + i.total
   }, 0)
@@ -4280,11 +4260,9 @@ function atualizarTotaispv() {
   totalGeral.value = Math.max(VALOR_MINIMO, totalFinal)
 }
 
-const idPedidoEdicao = ref(false)
+const idPedidoEdicao = ref(null)
 
 async function salvarPedido() {
-  debugger
-
   if (!clienteSelecionado.value) {
     showToast('Selecione um cliente!', 3000)
     return
@@ -4295,37 +4273,41 @@ async function salvarPedido() {
     return
   }
 
-  if (!itensOrcamento.value || itensOrcamento.value.length === 0) {
+  if (!itensPedido.value?.length) {
     showToast('Adicione pelo menos 1 item!', 3000)
     return
   }
 
-  if (!totalGeral.value || totalGeral.value <= 0) {
+  if (Number(totalGeral.value) <= 0) {
     showToast('Total do pedido não pode ser zero!', 3000)
     return
   }
 
-  // 🔢 Totais
-  const totalItens = totalGeral.value
-  const valorDesconto = valordesconto.value || 0
-  const valorAcrescimo = valoracrescimo.value || 0
-  const valorTotalFinal = totalItens - valorDesconto + valorAcrescimo
+  // 🔢 valores seguros
+  const valorDesconto = Number(valordesconto.value || 0)
+  const valorAcrescimo = Number(valoracrescimo.value || 0)
 
   const payload = {
+    // ⚠️ obrigatório no backend
+
     clienteid: clienteSelecionado.value,
     vendedorid: vendedorSelecionado.value,
-    observacoes: observacao.value,
-    condicao: condicao.value,
+    numero: 4,
+
+    previssao: previssao.value || null,
+    observacoes: observacoes.value || '',
+    condicao: condicao.value || null,
+
     valordesconto: valorDesconto,
     valoracrescimo: valorAcrescimo,
-    valortotalitens: totalItens,
-    valortotal: valorTotalFinal,
-    status: 'ABERTO',
+
+    status: item.value?.status || 'ABERTA',
+
     itens: itensPedido.value.map((item) => ({
       produtoid: item.produtoid,
       descricao: item.descricao,
-      quantidade: item.quantidade,
-      valorunit: item.valorunit,
+      quantidade: Number(item.quantidade),
+      valorunit: Number(item.valorunit),
       tipoitem: item.tipoitem || 'PRODUTO',
     })),
   }
@@ -4334,20 +4316,26 @@ async function salvarPedido() {
     let res
 
     if (idPedidoEdicao.value) {
-      console.log('Atualizando pedido ID:', idPedidoEdicao.value)
       res = await axios.put(`/pedidos/${idPedidoEdicao.value}`, payload)
-      Notify.create({ type: 'positive', message: 'Pedido atualizado com sucesso!' })
+      Notify.create({
+        type: 'positive',
+        message: 'Pedido atualizado com sucesso!',
+      })
     } else {
       res = await axios.post('/pedidos', payload)
-      Notify.create({ type: 'positive', message: 'Pedido criado com sucesso!' })
+      Notify.create({
+        type: 'positive',
+        message: 'Pedido criado com sucesso!',
+      })
     }
 
     console.log('Retorno:', res.data)
-    //    limparPedido()
-    //    carregarPedidos()
+
+    // limparPedido()
+    // carregarPedidos()
   } catch (error) {
-    console.error('Erro ao salvar pedido:', error)
-    showToast('Erro ao salvar pedido!', 3000)
+    console.error('Erro ao salvar pedido:', error.response?.data || error)
+    showToast(error.response?.data?.erro || 'Erro ao salvar pedido!', 3000)
   }
 }
 

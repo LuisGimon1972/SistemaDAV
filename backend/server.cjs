@@ -1878,15 +1878,26 @@ app.post('/pedidos', async (req, res) => {
     numero,
     clienteid,
     vendedorid,
-    previsao,
+    previssao, // 👈 nome correto
     observacoes,
-    valordesconto,
-    valoracrescimo,
+    valordesconto = 0,
+    valoracrescimo = 0,
+    status = 'ABERTO',
+    condicao,
     itens,
   } = req.body
 
-  if (!clienteid || !vendedorid || !itens || itens.length === 0) {
-    return res.status(400).json({ erro: 'Pedido inválido' })
+  // ✅ Validações obrigatórias
+  if (!numero) {
+    return res.status(400).json({ erro: 'Número do pedido é obrigatório' })
+  }
+
+  if (!clienteid || !vendedorid) {
+    return res.status(400).json({ erro: 'Cliente e vendedor são obrigatórios' })
+  }
+
+  if (!Array.isArray(itens) || itens.length === 0) {
+    return res.status(400).json({ erro: 'Pedido sem itens' })
   }
 
   const client = await pool.connect()
@@ -1894,52 +1905,62 @@ app.post('/pedidos', async (req, res) => {
   try {
     await client.query('BEGIN')
 
+    // ✅ Insere pedido
     const pedidoResult = await client.query(
       `
       INSERT INTO pedidos (
-        numero, clienteid, vendedorid, previsao,
-        observacoes, valordesconto, valoracrescimo
+        numero, clienteid, vendedorid,
+        previssao, observacoes,
+        valordesconto, valoracrescimo,
+        status, condicao
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
       RETURNING id
       `,
-      [numero, clienteid, vendedorid, previsao, observacoes, valordesconto, valoracrescimo],
+      [
+        numero,
+        clienteid,
+        vendedorid,
+        previssao || null,
+        observacoes || null,
+        Number(valordesconto) || 0,
+        Number(valoracrescimo) || 0,
+        status,
+        condicao || null,
+      ],
     )
 
     const pedidoid = pedidoResult.rows[0].id
-
     let totalItens = 0
 
+    // ✅ Insere itens
     for (const item of itens) {
-      const total = item.quantidade * item.valorunit
+      const quantidade = Number(item.quantidade) || 0
+      const valorunit = Number(item.valorunit) || 0
+      const total = quantidade * valorunit
+
       totalItens += total
 
       await client.query(
         `
         INSERT INTO itenspedido (
           pedidoid, produtoid, descricao,
-          quantidade, valorunit, total, tipoitem
+          quantidade, valorunit, total
         )
-        VALUES ($1,$2,$3,$4,$5,$6,$7)
+        VALUES ($1,$2,$3,$4,$5,$6)
         `,
-        [
-          pedidoid,
-          item.produtoid,
-          item.descricao,
-          item.quantidade,
-          item.valorunit,
-          total,
-          item.tipoitem || 'PRODUTO',
-        ],
+        [pedidoid, item.produtoid || null, item.descricao || '', quantidade, valorunit, total],
       )
     }
 
-    const valorTotal = totalItens - (valordesconto || 0) + (valoracrescimo || 0)
+    const valorTotal = totalItens - Number(valordesconto) + Number(valoracrescimo)
 
+    // ✅ Atualiza totais
     await client.query(
       `
       UPDATE pedidos
-      SET valortotalitens = $1, valortotal = $2
+      SET valortotalitens = $1,
+          valortotal = $2
       WHERE id = $3
       `,
       [totalItens, valorTotal, pedidoid],
@@ -1949,7 +1970,13 @@ app.post('/pedidos', async (req, res) => {
     res.status(201).json({ pedidoid })
   } catch (err) {
     await client.query('ROLLBACK')
-    res.status(500).json({ erro: err.message })
+
+    console.error('❌ Erro ao salvar pedido:', err.message)
+
+    res.status(500).json({
+      erro: 'Erro interno ao salvar pedido',
+      detalhe: err.message,
+    })
   } finally {
     client.release()
   }
