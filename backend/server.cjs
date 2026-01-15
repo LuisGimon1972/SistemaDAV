@@ -2089,6 +2089,33 @@ app.put('/pedidos/:id', async (req, res) => {
   }
 })
 
+app.get('/pedidos', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        p.id,
+        p.numero,
+        c.nome  AS cliente,
+        v.nome  AS vendedor,
+        p.datacriacao,
+        p.valortotalitens,
+        p.valordesconto,
+        p.valoracrescimo,
+        p.valortotal,
+        p.status
+      FROM pedidos p
+      JOIN clientes c ON c.id = p.clienteid
+      JOIN vendedor v ON v.id = p.vendedorid
+      ORDER BY p.id DESC
+    `)
+
+    res.json(result.rows)
+  } catch (err) {
+    console.error('Erro ao listar pedidos:', err)
+    res.status(500).json({ erro: 'Erro ao buscar pedidos' })
+  }
+})
+
 app.delete('/pedidos/:id', async (req, res) => {
   const pedidoid = Number(req.params.id)
 

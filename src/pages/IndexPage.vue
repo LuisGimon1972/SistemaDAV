@@ -311,7 +311,7 @@
               @click="
                 () => {
                   ocultar()
-                  trocartituloOs()
+                  titulo = 'Listagem de Ordnes de Serviço'
                   orcamentodav = false
                   listagemos = true
                   menuAtivo = 'listadoOs'
@@ -414,7 +414,7 @@
                   ocultar()
                   trocartituloOs()
                   orcamentodav = false
-                  listagemos = true
+                  listagempv = true
                   menuAtivo = 'listadoPv'
                 }
               "
@@ -1765,6 +1765,48 @@
           </q-table>
         </div>
 
+        <div v-if="listagempv">
+          <q-table
+            title="Listagem de Pedidos de Vendas"
+            :rows="PedidosGet"
+            :columns="colunasPv"
+            row-key="id"
+            class="q-mt-md"
+            dense
+            title-class="text-h4 text-primary q-pa-md"
+            :pagination="{ page: 1, rowsPerPage: 14 }"
+          >
+            <template v-slot:body="props">
+              <q-tr :props="props" :class="rowClassOs(props.row)">
+                <q-td v-for="col in props.cols" :key="col.name" :props="props">
+                  <!-- AÇÕES -->
+                  <template v-if="col.name === 'acoes'">
+                    <q-btn size="sm" color="warning" icon="edit" @click="editarOs(props.row)" />
+                    <q-btn
+                      size="sm"
+                      color="negative"
+                      icon="delete"
+                      @click="excluirOs(props.row.id)"
+                    />
+                    <q-btn size="sm" color="blue" icon="visibility" @click="verOs(props.row)" />
+                    <q-btn
+                      size="sm"
+                      color="positive"
+                      icon="print"
+                      @click="imprimirOrdem(props.row.id)"
+                    />
+                  </template>
+
+                  <!-- OUTRAS COLUNAS -->
+                  <template v-else>
+                    {{ col.value }}
+                  </template>
+                </q-td>
+              </q-tr>
+            </template>
+          </q-table>
+        </div>
+
         <!-- LISTAR CLIENTES -->
         <div v-if="listarClientes">
           <q-table
@@ -2155,6 +2197,8 @@ const mostrarItens = ref(false)
 const listarItens = ref(false)
 const listarClientes = ref(false)
 const listarVendedores = ref(false)
+const listagempv = ref(false)
+
 const listarDividas = ref(false)
 const resumoDividas = ref(false)
 const resultadoBusca = ref([])
@@ -2197,6 +2241,7 @@ function ocultar() {
   listarVendedores.value = false
   mostrarItens.value = false
   mostrarFormObjetos.value = false
+  listagempv.value = false
   listarItens.value = false
   resumoDividas.value = false
   criarOrcamento.value = false
@@ -3334,6 +3379,7 @@ const davmenuOs = ref(false)
 const davmenuPv = ref(false)
 
 const ordensServico = ref([])
+const PedidosGet = ref([])
 const carregandoOs = ref(false)
 const idOsEdicao = ref(null)
 const duracaoHhmm = ref('')
@@ -3709,6 +3755,19 @@ async function listarOrdensServico() {
     const res = await fetch('http://localhost:3000/ordens')
     if (!res.ok) throw new Error('Erro ao buscar ordens')
     ordensServico.value = await res.json()
+  } catch (err) {
+    console.error(err)
+  } finally {
+    carregandoOs.value = false
+  }
+}
+
+async function listarPedidosVenda() {
+  try {
+    //carregandoOs.value = true
+    const res = await fetch('http://localhost:3000/pedidos')
+    if (!res.ok) throw new Error('Erro ao buscar ordens')
+    PedidosGet.value = await res.json()
   } catch (err) {
     console.error(err)
   } finally {
@@ -4243,6 +4302,96 @@ watch(valoracrescimo, () => {
   atualizarTotaispv()
 })
 
+const colunasPv = [
+  {
+    name: 'numero',
+    label: 'PDV',
+    field: 'numero',
+    align: 'left',
+    sortable: true,
+  },
+  {
+    name: 'cliente',
+    label: 'Cliente',
+    field: 'cliente',
+    align: 'left',
+    sortable: true,
+  },
+  {
+    name: 'vendedor',
+    label: 'Vendedor',
+    field: 'vendedor',
+    align: 'left',
+    sortable: true,
+  },
+  {
+    name: 'datacriacao',
+    label: 'Abertura',
+    field: 'datacriacao',
+    align: 'center',
+    sortable: true,
+    format: (val) => (val ? new Date(val).toLocaleDateString('pt-BR') : ''),
+  },
+  {
+    name: 'valortotalitens',
+    label: 'Total Itens/Serv.',
+    field: 'valortotalitens',
+    align: 'right',
+    format: (val) =>
+      Number(val).toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+      }),
+  },
+  {
+    name: 'valordesconto',
+    label: 'Desconto',
+    field: 'valordesconto',
+    align: 'right',
+    format: (val) =>
+      Number(val).toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+      }),
+  },
+  {
+    name: 'valoracrescimo',
+    label: 'Acréscimo',
+    field: 'valoracrescimo',
+    align: 'right',
+    format: (val) =>
+      Number(val).toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+      }),
+  },
+  {
+    name: 'valortotal',
+    label: 'Total',
+    field: 'valortotal',
+    align: 'right',
+    sortable: true,
+    format: (val) =>
+      Number(val).toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+      }),
+  },
+  {
+    name: 'status',
+    label: 'Status',
+    field: 'status',
+    align: 'center',
+    sortable: true,
+  },
+  {
+    name: 'acoes',
+    label: 'Ações',
+    field: 'acoes',
+    align: 'center',
+  },
+]
+
 function atualizarTotaispv() {
   let VALOR_MINIMO = 0.01
   const subtotal = itensPedido.value.reduce((acc, i) => {
@@ -4397,7 +4546,10 @@ watch(
     hoje.setHours(0, 0, 0, 0)
     const dataEscolhida = new Date(dataFormatada + 'T00:00:00')
     if (dataEscolhida < hoje && entrarOrcamento.value == false) {
-      showToast(`A previssao de entrega não pode ser menor que a data atual!`, 3000)
+      Notify.create({
+        type: 'warning',
+        message: `A previssao de entrega não pode ser menor que a data atual!`,
+      })
       previssao.value = null
     }
   },
@@ -4539,6 +4691,7 @@ onMounted(() => {
   carregaraClientes()
   listarOrdensServico()
   carregarVendedores()
+  listarPedidosVenda()
 })
 
 onMounted(async () => {
