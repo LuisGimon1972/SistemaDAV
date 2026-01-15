@@ -4479,6 +4479,7 @@ async function salvarPedido() {
         type: 'positive',
         message: `Pedido ${res.data.numero} criado com sucesso!`,
       })
+      listarPedidosVenda()
     }
 
     console.log('Retorno:', res.data)
