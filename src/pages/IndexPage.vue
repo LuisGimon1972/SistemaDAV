@@ -1,4 +1,4 @@
-﻿<template>
+﻿﻿<template>
   <div class="layout-principal">
     <!-- TOPO -->
     <div class="painel-superior">
@@ -393,7 +393,8 @@
               @click="
                 () => {
                   ocultar()
-                  limparOs()
+                  limparPv()
+                  limpapv = false
                   titulo = 'NOVO PEDIDO DE VENDA'
                   cadastrarpv = true
                   menuAtivo = 'cadastropv'
@@ -1010,7 +1011,7 @@
                 </template>
 
                 <q-popup-proxy ref="popupValidade" transition-show="scale" transition-hide="scale">
-                  <q-date v-model="validade" mask="DD-MM-YYYY" />
+                  <q-date v-model="previssao" mask="DD-MM-YYYY" />
                 </q-popup-proxy>
               </q-input>
             </div>
@@ -1129,7 +1130,7 @@
                   icon="delete"
                   dense
                   round
-                  @click="excluirItemOs(props.rowIndex)"
+                  @click="excluirItemPv(props.rowIndex)"
                 >
                   <q-tooltip>Excluir</q-tooltip>
                 </q-btn>
@@ -1167,7 +1168,7 @@
                 filled
                 v-model.number="valoracrescimo"
                 type="number"
-                @keyup.enter="atualizarTotaisOs"
+                @keyup.enter="atualizarTotaispv"
                 label="Acréscimo (R$)"
                 class="label-grande"
               />
@@ -1195,7 +1196,7 @@
             color="negative"
             icon="delete_sweep"
             size="md"
-            @click="limparOs"
+            @click="limparPv"
             class="q-ml-md"
           />
         </div>
@@ -2163,6 +2164,7 @@ const observacoes = ref(null)
 const adiantamento = ref(0)
 const orcamentodav = ref(false)
 const aviso = ref(false)
+const limpapv = ref(false)
 const limpar = ref(false)
 const condicao = ref(null)
 const validade = ref(null)
@@ -4047,7 +4049,10 @@ watch(clienteSelecionado, async (novoCliente) => {
   try {
     const statusOs = item.value.status
     const usarRotaCompleta =
-      statusOs === 'CANCELADA' || statusOs === 'FINALIZADA' || criarOrcamento.value
+      statusOs === 'CANCELADA' ||
+      statusOs === 'FINALIZADA' ||
+      criarOrcamento.value ||
+      cadastrarpv.value
     const url = usarRotaCompleta
       ? `/clientesos/${novoCliente}/objetos`
       : `/clientes/${novoCliente}/objetos`
@@ -4088,6 +4093,8 @@ function formatarPlacaSerie() {
 }
 
 ///////Pedido de Venda
+const idPedidoEdicao = ref(null)
+
 const colunasvendedor = [
   { name: 'cpf', label: 'CPF', field: 'cpf', align: 'left' },
   { name: 'nome', label: 'Nome', field: 'nome', align: 'left' },
@@ -4237,7 +4244,7 @@ watch(valoracrescimo, () => {
 })
 
 function atualizarTotaispv() {
-  const VALOR_MINIMO = 0.01
+  let VALOR_MINIMO = 0.01
   const subtotal = itensPedido.value.reduce((acc, i) => {
     i.total = Number(i.quantidade) * Number(i.valorunit)
     return acc + i.total
@@ -4256,11 +4263,12 @@ function atualizarTotaispv() {
       }, 50)
     }
   }
+  if (limpapv.value) {
+    VALOR_MINIMO = 0.0
+  }
   const totalFinal = totalBase - descontoNum
   totalGeral.value = Math.max(VALOR_MINIMO, totalFinal)
 }
-
-const idPedidoEdicao = ref(null)
 
 async function salvarPedido() {
   if (!clienteSelecionado.value) {
@@ -4273,6 +4281,11 @@ async function salvarPedido() {
     return
   }
 
+  if (!previssao.value) {
+    showToast('Deve indicar a previssão de entrega!', 3000)
+    return
+  }
+
   if (!itensPedido.value?.length) {
     showToast('Adicione pelo menos 1 item!', 3000)
     return
@@ -4282,27 +4295,18 @@ async function salvarPedido() {
     showToast('Total do pedido não pode ser zero!', 3000)
     return
   }
-
-  // 🔢 valores seguros
   const valorDesconto = Number(valordesconto.value || 0)
   const valorAcrescimo = Number(valoracrescimo.value || 0)
 
   const payload = {
-    // ⚠️ obrigatório no backend
-
     clienteid: clienteSelecionado.value,
     vendedorid: vendedorSelecionado.value,
-    numero: 4,
-
     previssao: previssao.value || null,
     observacoes: observacoes.value || '',
     condicao: condicao.value || null,
-
     valordesconto: valorDesconto,
     valoracrescimo: valorAcrescimo,
-
-    status: item.value?.status || 'ABERTA',
-
+    status: item.value?.status || 'ABERTO',
     itens: itensPedido.value.map((item) => ({
       produtoid: item.produtoid,
       descricao: item.descricao,
@@ -4311,7 +4315,6 @@ async function salvarPedido() {
       tipoitem: item.tipoitem || 'PRODUTO',
     })),
   }
-
   try {
     let res
 
@@ -4325,13 +4328,12 @@ async function salvarPedido() {
       res = await axios.post('/pedidos', payload)
       Notify.create({
         type: 'positive',
-        message: 'Pedido criado com sucesso!',
+        message: `Pedido ${res.data.numero} criado com sucesso!`,
       })
     }
 
     console.log('Retorno:', res.data)
-
-    // limparPedido()
+    limparPv()
     // carregarPedidos()
   } catch (error) {
     console.error('Erro ao salvar pedido:', error.response?.data || error)
@@ -4383,6 +4385,51 @@ function adicionarItemPv(item) {
   resultadoBusca.value = []
   buscaItem.value = ''
   itemSelecionado.value = -1
+}
+
+watch(
+  () => previssao.value,
+  (novaData) => {
+    if (!novaData) return
+    const [dia, mes, ano] = novaData.split('-')
+    const dataFormatada = `${ano}-${mes}-${dia}`
+    const hoje = new Date()
+    hoje.setHours(0, 0, 0, 0)
+    const dataEscolhida = new Date(dataFormatada + 'T00:00:00')
+    if (dataEscolhida < hoje && entrarOrcamento.value == false) {
+      showToast(`A previssao de entrega não pode ser menor que a data atual!`, 3000)
+      previssao.value = null
+    }
+  },
+)
+
+function excluirItemPv(index) {
+  itensPedido.value.splice(index, 1)
+  atualizarTotaispv()
+}
+
+async function limparPv() {
+  clienteSelecionado.value = null
+  vendedorSelecionado.value = null
+  itensPedido.value.length = 0
+  itensPedido.value.length = 0
+  valordesconto.value = 0
+  valoracrescimo.value = 0
+  totalGeral.value = 0
+  buscaItem.value = ''
+  resultadoBusca.value.length = 0
+  observacoes.value = ''
+  previssao.value = ''
+  endCliente.value = ''
+  endCep.value = ''
+  endBairro.value = ''
+  telCliente.value = ''
+  celCliente.value = ''
+  emailCliente.value = ''
+  limpapv.value = true
+  if (item.value) {
+    item.value.status = 'ABERTO'
+  }
 }
 
 /* ✔️ ao sair do campo */

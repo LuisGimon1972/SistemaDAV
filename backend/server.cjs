@@ -1875,10 +1875,9 @@ app.delete('/vendedores/:id', async (req, res) => {
 
 app.post('/pedidos', async (req, res) => {
   const {
-    numero,
     clienteid,
     vendedorid,
-    previssao, // 👈 nome correto
+    previssao, // nome correto
     observacoes,
     valordesconto = 0,
     valoracrescimo = 0,
@@ -1888,10 +1887,6 @@ app.post('/pedidos', async (req, res) => {
   } = req.body
 
   // ✅ Validações obrigatórias
-  if (!numero) {
-    return res.status(400).json({ erro: 'Número do pedido é obrigatório' })
-  }
-
   if (!clienteid || !vendedorid) {
     return res.status(400).json({ erro: 'Cliente e vendedor são obrigatórios' })
   }
@@ -1904,6 +1899,22 @@ app.post('/pedidos', async (req, res) => {
 
   try {
     await client.query('BEGIN')
+
+    // 🔢 Gera número automático do pedido (PD0001)
+    let numero = 'PD0001'
+
+    const ultimoPedido = await client.query(`
+      SELECT numero
+      FROM pedidos
+      WHERE numero LIKE 'PD%'
+      ORDER BY id DESC
+      LIMIT 1
+    `)
+
+    if (ultimoPedido.rows.length) {
+      const atual = parseInt(ultimoPedido.rows[0].numero.replace('PD', ''))
+      numero = 'PD' + String(atual + 1).padStart(4, '0')
+    }
 
     // ✅ Insere pedido
     const pedidoResult = await client.query(
@@ -1967,7 +1978,12 @@ app.post('/pedidos', async (req, res) => {
     )
 
     await client.query('COMMIT')
-    res.status(201).json({ pedidoid })
+
+    // ✅ Retorno
+    res.status(201).json({
+      pedidoid,
+      numero,
+    })
   } catch (err) {
     await client.query('ROLLBACK')
 
