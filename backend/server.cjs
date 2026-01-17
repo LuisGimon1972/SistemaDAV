@@ -1999,54 +1999,77 @@ app.post('/pedidos', async (req, res) => {
 })
 
 app.put('/pedidos/:id', async (req, res) => {
-  const pedidoid = Number(req.params.id)
+  const { id } = req.params
   const {
     clienteid,
     vendedorid,
-    previsao,
+    previssao,
     observacoes,
-    valordesconto,
-    valoracrescimo,
-    status,
-    itens,
+    condicao,
+    valordesconto = 0,
+    valoracrescimo = 0,
+    valortotalitens = 0,
+    valortotal = 0,
+    status = 'ABERTO',
+    itens = [],
   } = req.body
+
+  if (!clienteid || !vendedorid) {
+    return res.status(400).json({ error: 'Cliente e vendedor são obrigatórios' })
+  }
+
+  if (!Array.isArray(itens) || !itens.length) {
+    return res.status(400).json({ error: 'Pedido sem itens' })
+  }
 
   const client = await pool.connect()
 
   try {
     await client.query('BEGIN')
 
+    // 🔒 Atualiza apenas campos editáveis (numero NÃO entra)
     await client.query(
       `
       UPDATE pedidos
-      SET clienteid = $1,
-          vendedorid = $2,
-          previsao = $3,
-          observacoes = $4,
-          valordesconto = $5,
-          valoracrescimo = $6,
-          status = $7
-      WHERE id = $8
+      SET
+        clienteid = $1,
+        vendedorid = $2,
+        previssao = $3,
+        observacoes = $4,
+        condicao = $5,
+        valordesconto = $6,
+        valoracrescimo = $7,
+        valortotalitens = $8,
+        valortotal = $9,
+        status = $10
+      WHERE id = $11
       `,
       [
         clienteid,
         vendedorid,
-        previsao,
-        observacoes,
-        valordesconto,
-        valoracrescimo,
+        previssao || null,
+        observacoes || null,
+        condicao || null,
+        Number(valordesconto),
+        Number(valoracrescimo),
+        Number(valortotalitens),
+        Number(valortotal),
         status,
-        pedidoid,
+        id,
       ],
     )
 
-    await client.query('DELETE FROM itenspedido WHERE pedidoid = $1', [pedidoid])
+    // 🔄 Remove itens antigos
+    await client.query(
+      `DELETE FROM itenspedido WHERE pedidoid = $1`,
+      [id],
+    )
 
-    let totalItens = 0
-
+    // ➕ Insere itens atualizados
     for (const item of itens) {
-      const total = item.quantidade * item.valorunit
-      totalItens += total
+      const quantidade = Number(item.quantidade) || 0
+      const valorunit = Number(item.valorunit) || 0
+      const total = quantidade * valorunit
 
       await client.query(
         `
@@ -2057,37 +2080,35 @@ app.put('/pedidos/:id', async (req, res) => {
         VALUES ($1,$2,$3,$4,$5,$6,$7)
         `,
         [
-          pedidoid,
-          item.produtoid,
+          id,
+          item.produtoid || null,
           item.descricao,
-          item.quantidade,
-          item.valorunit,
+          quantidade,
+          valorunit,
           total,
           item.tipoitem || 'PRODUTO',
         ],
       )
     }
 
-    const valorTotal = totalItens - (valordesconto || 0) + (valoracrescimo || 0)
-
-    await client.query(
-      `
-      UPDATE pedidos
-      SET valortotalitens = $1, valortotal = $2
-      WHERE id = $3
-      `,
-      [totalItens, valorTotal, pedidoid],
-    )
-
     await client.query('COMMIT')
-    res.json({ sucesso: true })
+
+    res.json({ success: true })
   } catch (err) {
     await client.query('ROLLBACK')
-    res.status(500).json({ erro: err.message })
+
+    console.error('❌ Erro ao atualizar pedido:', err.message)
+    res.status(500).json({
+      error: 'Erro interno ao atualizar pedido',
+      detail: err.message,
+    })
   } finally {
     client.release()
   }
 })
+
+
+
 
 app.get('/pedidos', async (req, res) => {
   try {
@@ -2096,6 +2117,7 @@ app.get('/pedidos', async (req, res) => {
         p.id,
         p.numero,
         p.clienteid,
+        p.previssao,
         p.vendedorid,
         c.nome  AS cliente,
         v.nome  AS vendedor,

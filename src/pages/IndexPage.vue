@@ -396,6 +396,8 @@
                   limparPv()
                   limpapv = false
                   titulo = 'NOVO PEDIDO DE VENDA'
+                  desabilitarTudo = false
+                  modoEdicao.value = false
                   cadastrarpv = true
                   menuAtivo = 'cadastropv'
                 }
@@ -996,7 +998,7 @@
               <q-input filled v-model="cpfCliente" label="CPF" readonly class="sem-linha" />
             </div>
 
-            <!-- VALIDADE -->
+            <!-- PREVISSÃO -->
             <div class="col-12 col-md-2">
               <q-input
                 filled
@@ -1188,7 +1190,7 @@
             color="primary"
             icon="save"
             size="md"
-            @click="modoEdicao ? salvarEdicaoOs() : salvarPedido()"
+            @click="modoEdicao ? salvarEdicaoPv() : salvarPedido()"
           />
 
           <q-btn
@@ -1788,7 +1790,7 @@
                       icon="delete"
                       @click="excluirOs(props.row.id)"
                     />
-                    <q-btn size="sm" color="blue" icon="visibility" @click="verOs(props.row)" />
+                    <q-btn size="sm" color="blue" icon="visibility" @click="verPv(props.row)" />
                     <q-btn
                       size="sm"
                       color="positive"
@@ -4392,7 +4394,7 @@ const colunasPv = [
     align: 'center',
   },
 ]
-
+let totalitempv
 function atualizarTotaispv() {
   let VALOR_MINIMO = 0.01
   const subtotal = itensPedido.value.reduce((acc, i) => {
@@ -4418,6 +4420,7 @@ function atualizarTotaispv() {
   }
   const totalFinal = totalBase - descontoNum
   totalGeral.value = Math.max(VALOR_MINIMO, totalFinal)
+  totalitempv = totalBase   
 }
 
 async function salvarPedido() {
@@ -4586,7 +4589,7 @@ async function limparPv() {
   }
 }
 
-const editarPv = async (row) => {
+const editarPv = async (row) => {  
   desabilitarTudo.value = false
   const status = (row.status || '').toUpperCase()
   if (status === 'FINALIZADA' || status === 'FINALIZADO') {
@@ -4597,8 +4600,27 @@ const editarPv = async (row) => {
     showToast('Este pedido está cancelado e não pode ser editado!', 2000)
     return
   }  
-  titulo.value = `ATUALIZAR PEDIDO DE VENDA - Nº: ${row.numero}`
-  //modoEdicao.value = true
+  titulo.value = `ATUALIZAR PEDIDO DE VENDA - Nº: ${row.numero}`  
+  modoEdicao.value = true
+  cadastrarpv.value = true
+  orcamentodav.value = false
+  listagempv.value = false
+  entrarOrcamento.value = false  
+  idPvEdicao.value = row.id
+  clienteSelecionado.value = row.clienteid
+  vendedorSelecionado.value = row.vendedorid
+  previssao.value = formatarDataBR(row.previssao) 
+  observacao.value = row.observacoes ?? ''  
+  valordesconto.value = Number(row.valordesconto) || 0
+  valoracrescimo.value = Number(row.valoracrescimo) || 0  
+  item.value.status = row.status || 'ABERTO'  
+  await carregarItensDoPedido(row.id)
+  atualizarTotaispv()
+}
+
+const verPv = async (row) => {
+  desabilitarTudo.value = true  
+  titulo.value = `VISUALIZAR PEDIDO DE VENDA - Nº: ${row.numero}`  
   cadastrarpv.value = true
   orcamentodav.value = false
   listagempv.value = false
@@ -4611,10 +4633,59 @@ const editarPv = async (row) => {
   valoracrescimo.value = Number(row.valoracrescimo) || 0  
   item.value.status = row.status || 'ABERTO'  
   await carregarItensDoPedido(row.id)
-
-  // 🔢 Totais
   atualizarTotaispv()
 }
+
+async function salvarEdicaoPv() {
+  const valorDesconto = Number(valordesconto.value || 0)
+  const valorAcrescimo = Number(valoracrescimo.value || 0)
+  const valorItensPv = Number(totalitempv || 0)
+  const dados = {
+    clienteid: clienteSelecionado.value,
+    vendedorid: vendedorSelecionado.value, // 🔴 obrigatório (FK)
+    previssao: previssao.value,
+    observacoes: observacao.value,
+    status: item.value.status,
+    condicao: condicao.value,
+
+    valordesconto: valorDesconto || 0,
+    valoracrescimo: valorAcrescimo || 0,
+    valortotalitens: valorItensPv || 0,    
+    valortotal: Number(totalGeral.value) || 0,
+
+    itens: itensPedido.value.map(i => ({
+      produtoid: i.produtoid,
+      descricao: i.nome || i.descricao, // garante nome do item
+      quantidade: Number(i.quantidade),
+      valorunit: Number(i.valorunit),
+      total: Number(i.total),
+    })),
+  }  
+  try {
+    const res = await fetch(`${API_URL}/pedidos/${idPvEdicao.value}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dados),
+    })
+
+    const resultado = await parseJsonSeguro(res)
+
+    if (!res.ok) {
+      throw new Error(resultado?.message || 'Erro ao atualizar pedido')
+    }
+    Notify.create({
+        type: 'positive',
+        message: `Pedido Nº${idPvEdicao.value} atualizado com sucesso!`,
+      })    
+    idOrcamentoEdicao.value = null
+    listarPedidosVenda()    
+
+  } catch (erro) {
+    console.error('❌ Erro ao atualizar pedido:', erro)
+    showToast(erro.message || 'Erro ao atualizar pedido')
+  }
+}
+
 
 
 async function carregarItensDoPedido(id) {
@@ -4626,8 +4697,7 @@ async function carregarItensDoPedido(id) {
     }
 
     const dados = await res.json()
-
-    // 🔒 Garante array
+   
     if (!Array.isArray(dados)) {
       console.error('Itens do pedido inválidos:', dados)
       itensPedido.value = []
@@ -4635,13 +4705,13 @@ async function carregarItensDoPedido(id) {
     }
 
     itensPedido.value = dados.map((item) => ({
-  controle: item.id,
-  produtoid: item.produtoid,
-  nome: item.nome, // ✅ sempre preenchido
-  quantidade: Number(item.quantidade) || 0,
-  valorunit: Number(item.valorunit) || 0,
-  total: Number(item.total) || 0,
-}))
+      controle: item.id,
+      produtoid: item.produtoid,
+      nome: item.nome, 
+      quantidade: Number(item.quantidade) || 0,
+      valorunit: Number(item.valorunit) || 0,
+      total: Number(item.total) || 0,
+    }))
 
   } catch (err) {
     console.error('❌ Erro ao carregar itens do pedido:', err.message)
@@ -4649,10 +4719,6 @@ async function carregarItensDoPedido(id) {
   }
 }
 
-
-
-
-/* ✔️ ao sair do campo */
 function formatarSalario() {
   let valor = salarioFormatado.value
 
