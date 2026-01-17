@@ -2095,6 +2095,8 @@ app.get('/pedidos', async (req, res) => {
       SELECT
         p.id,
         p.numero,
+        p.clienteid,
+        p.vendedorid,
         c.nome  AS cliente,
         v.nome  AS vendedor,
         p.datacriacao,
@@ -2127,6 +2129,39 @@ app.delete('/pedidos/:id', async (req, res) => {
     res.status(500).json({ erro: err.message })
   }
 })
+
+app.get('/pedidos/:id/itens', async (req, res) => {
+  const { id } = req.params
+
+  try {
+    const { rows } = await pool.query(
+      `
+      SELECT
+        ip.id,
+        ip.pedidoid,
+        ip.produtoid,
+        COALESCE(i.nome, ip.descricao) AS nome,
+        ip.quantidade,
+        ip.valorunit,
+        ip.total,
+        ip.tipoitem
+      FROM itenspedido ip
+      LEFT JOIN itens i ON i.controle = ip.produtoid
+      WHERE ip.pedidoid = $1
+      ORDER BY ip.id ASC
+      `,
+      [id],
+    )
+
+    res.json(rows || [])
+  } catch (err) {
+    console.error('❌ Erro ao buscar itens do pedido:', err.message)
+    res.status(500).json({ error: 'Erro interno ao buscar itens do pedido' })
+  }
+})
+
+
+
 
 // ==========================================
 //  INICIAR SERVIDOR

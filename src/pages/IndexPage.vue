@@ -1781,7 +1781,7 @@
                 <q-td v-for="col in props.cols" :key="col.name" :props="props">
                   <!-- AÇÕES -->
                   <template v-if="col.name === 'acoes'">
-                    <q-btn size="sm" color="warning" icon="edit" @click="editarOs(props.row)" />
+                    <q-btn size="sm" color="warning" icon="edit" @click="editarPv(props.row)" />
                     <q-btn
                       size="sm"
                       color="negative"
@@ -3382,6 +3382,7 @@ const ordensServico = ref([])
 const PedidosGet = ref([])
 const carregandoOs = ref(false)
 const idOsEdicao = ref(null)
+const idPvEdicao = ref(null)
 const duracaoHhmm = ref('')
 const precovendaser = ref('')
 const duracao = ref(null)
@@ -4584,6 +4585,72 @@ async function limparPv() {
     item.value.status = 'ABERTO'
   }
 }
+
+const editarPv = async (row) => {
+  desabilitarTudo.value = false
+  const status = (row.status || '').toUpperCase()
+  if (status === 'FINALIZADA' || status === 'FINALIZADO') {
+    showToast('Este pedido está finalizado e não pode ser editado!', 2000)
+    return
+  }
+  if (status === 'CANCELADA' || status === 'CANCELADO') {
+    showToast('Este pedido está cancelado e não pode ser editado!', 2000)
+    return
+  }  
+  titulo.value = `ATUALIZAR PEDIDO DE VENDA - Nº: ${row.numero}`
+  //modoEdicao.value = true
+  cadastrarpv.value = true
+  orcamentodav.value = false
+  listagempv.value = false
+  entrarOrcamento.value = false  
+  idPvEdicao.value = row.id
+  clienteSelecionado.value = row.clienteid
+  vendedorSelecionado.value = row.vendedorid
+  observacao.value = row.observacoes ?? ''  
+  valordesconto.value = Number(row.valordesconto) || 0
+  valoracrescimo.value = Number(row.valoracrescimo) || 0  
+  item.value.status = row.status || 'ABERTO'  
+  await carregarItensDoPedido(row.id)
+
+  // 🔢 Totais
+  atualizarTotaispv()
+}
+
+
+async function carregarItensDoPedido(id) {
+  try {
+    const res = await fetch(`${API_URL}/pedidos/${id}/itens`)
+
+    if (!res.ok) {
+      throw new Error(`Erro HTTP: ${res.status}`)
+    }
+
+    const dados = await res.json()
+
+    // 🔒 Garante array
+    if (!Array.isArray(dados)) {
+      console.error('Itens do pedido inválidos:', dados)
+      itensPedido.value = []
+      return
+    }
+
+    itensPedido.value = dados.map((item) => ({
+  controle: item.id,
+  produtoid: item.produtoid,
+  nome: item.nome, // ✅ sempre preenchido
+  quantidade: Number(item.quantidade) || 0,
+  valorunit: Number(item.valorunit) || 0,
+  total: Number(item.total) || 0,
+}))
+
+  } catch (err) {
+    console.error('❌ Erro ao carregar itens do pedido:', err.message)
+    itensPedido.value = []
+  }
+}
+
+
+
 
 /* ✔️ ao sair do campo */
 function formatarSalario() {
