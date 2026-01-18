@@ -2162,11 +2162,8 @@ import {
   gerarRelatorioGeral,
   gerarRelatorioStatus,
 } from 'src/utils/relatorio.js'
-
 axios.defaults.baseURL = 'http://localhost:3000'
-
 const $q = useQuasar()
-
 const API_URL = 'http://localhost:3000'
 const cliente = ref(novoCliente())
 const vendedor = ref(novoVendedor())
@@ -2201,7 +2198,6 @@ const listarItens = ref(false)
 const listarClientes = ref(false)
 const listarVendedores = ref(false)
 const listagempv = ref(false)
-
 const listarDividas = ref(false)
 const resumoDividas = ref(false)
 const resultadoBusca = ref([])
@@ -2332,8 +2328,10 @@ const buscarCep = async (val) => {
   try {
     const res = await axios.get(`https://viacep.com.br/ws/${cep}/json/`)
 
-    if (res.data.erro) {
-      showToast('CEP não encontrado ou inválido!', 1000)
+    if (res.data.erro) {      
+      const tipo = 'negative'
+      const texto = 'CEP não encontrado ou inválido!'
+      mensagemNotify(tipo, texto)                
       cepcerto.value = false
       return
     }
@@ -2346,22 +2344,28 @@ const buscarCep = async (val) => {
     vendedor.value.endereco = res.data.logradouro.toUpperCase() || ''
     cepcerto.value = true
   } catch (err) {
-    console.error('Erro ao buscar CEP', err)
-    showToast('Erro ao buscar CEP!', 1000)
+    console.error('Erro ao buscar CEP', err)    
+    const tipo = 'negative'
+    const texto = 'Erro ao buscar CEP!'
+    mensagemNotify(tipo, texto)                
   }
 }
 
 async function salvarCliente() {
-  if (!cliente.value.nome || !cliente.value.cpf || !cliente.value.limite) {
-    showToast('Preencha todos os campos obrigatórios!', 1000)
+  if (!cliente.value.nome || !cliente.value.cpf || !cliente.value.limite) {    
+    const tipo = 'warning'
+    const texto = 'Preencha todos os campos obrigatórios!'
+    mensagemNotify(tipo, texto)                
     if (!cliente.value.cpf) return cpfInput.value?.focus()
     if (!cliente.value.nome) return nomeInput.value?.focus()
     if (!cliente.value.limite) return limiteInput.value?.focus()
     return
   }
 
-  if (cepcerto.value === false) {
-    showToast('Preencha um CEP correto!', 1000)
+  if (cepcerto.value === false) {    
+    const tipo = 'warning'
+    const texto = 'Preencha um CEP correto!'
+    mensagemNotify(tipo, texto)                
     cliente.value.cep = ''
     return cepInput.value?.focus()
   }
@@ -2374,8 +2378,10 @@ async function salvarCliente() {
 
     const cpfDuplicado = clientesExistentes.find((c) => c.cpf === cliente.value.cpf)
 
-    if (cpfDuplicado) {
-      showToast('Já existe um cliente com este CPF!', 1500)
+    if (cpfDuplicado) {      
+      const tipo = 'negative'
+      const texto = 'Já existe um cliente com este CPF!'
+      mensagemNotify(tipo, texto)                
       return cpfInput.value?.focus()
     }
 
@@ -2496,8 +2502,10 @@ async function editarVendedor(c) {
     }
     admissao.value = data.dataadmissao
   } catch (err) {
-    console.error(err)
-    showToast('Erro ao carregar vendedor', 1500)
+    console.error(err)    
+    const tipo = 'negative'
+    const texto = 'Erro ao carregar vendedor!'
+    mensagemNotify(tipo, texto)                
   }
 }
 
@@ -2546,8 +2554,10 @@ async function salvarItem() {
     !item.value.quantidade ||
     !item.value.precocusto ||
     !item.value.precovenda
-  ) {
-    showToast('Preencha todos os campos obrigatórios!', 1000)
+  ) {    
+    const tipo = 'warning'
+    const texto = 'Preencha todos os campos obrigatórios!'
+    mensagemNotify(tipo, texto)                
     if (!item.value.codbarras) return codInput.value?.focus()
     if (!item.value.nome) return nomeiInput.value?.focus()
     if (!item.value.quantidade) return quanInput.value?.focus()
@@ -2560,12 +2570,16 @@ async function salvarItem() {
   const itemExistente = await resCheck.json()
 
   if (!item.value.controle && itemExistente) {
-    showToast('Código de barras já cadastrado!', 1500)
+    const tipo = 'warning'
+    const texto = 'Código de barras já está sendo usado em outro item!'
+    mensagemNotify(tipo, texto)                
     return codInput.value?.focus()
   }
 
-  if (item.value.controle && itemExistente && itemExistente.controle !== item.value.controle) {
-    showToast('Código de barras já está sendo usado em outro item!', 1500)
+  if (item.value.controle && itemExistente && itemExistente.controle !== item.value.controle) {    
+      const tipo = 'warning'
+      const texto = 'Código de barras já está sendo usado em outro item!'
+      mensagemNotify(tipo, texto)                
     return codInput.value?.focus()
   }
 
@@ -2599,7 +2613,7 @@ async function excluirItem(controle) {
   Dialog.create({
     title: 'Excluir Produto',
     message:
-      'Tem certeza que deseja excluir esse produto? Essa ação <b>não poderá ser desfeita</b>.',
+      'Tem certeza que deseja excluir esse item? Essa ação <b>não poderá ser desfeita</b>.',
     html: true,
     icon: 'warning',
     ok: {
@@ -2615,8 +2629,10 @@ async function excluirItem(controle) {
     persistent: true,
   }).onOk(async () => {
     try {
-      await fetch(`${API_URL}/itens/${controle}`, { method: 'DELETE' })
-      showToastv('Item excluido com sucesso!', 1000)
+      await fetch(`${API_URL}/itens/${controle}`, { method: 'DELETE' })      
+      const tipo = 'positive'
+      const texto = 'Item excluido com sucesso!'
+      mensagemNotify(tipo, texto)                
       carregarItens()
       carregarServicos()
     } catch (err) {
@@ -2799,8 +2815,10 @@ const buscarItem = async () => {
 
     resultadoBusca.value = dados
 
-    if (dados.length === 0) {
-      showToast('Nenhum item encontrado!', 1500)
+    if (dados.length === 0) {      
+      const tipo = 'negative'
+      const texto = 'Nenhum item encontrado!'
+      mensagemNotify(tipo, texto)                
       itemSelecionado.value = -1
     } else {
       itemSelecionado.value = 0
@@ -2808,9 +2826,10 @@ const buscarItem = async () => {
 
     console.log('Itens encontrados:', dados)
   } catch (err) {
-    console.error('Erro ao buscar itens:', err)
-
-    showToast('Erro ao buscar itens!', 3000)
+    console.error('Erro ao buscar itens:', err)    
+    const tipo = 'negative'
+    const texto = 'Erro ao buscar itens!'
+    mensagemNotify(tipo, texto)                
 
     resultadoBusca.value = []
     itemSelecionado.value = -1
@@ -2854,8 +2873,10 @@ function atualizarTotais() {
   if (!entrarOrcamento.value) {
     if (descontoNum > descontoMaximo) {
       descontoNum = descontoMaximo
-      desconto.value = descontoNum.toFixed(2)
-      showToast('O desconto informado é maior que o permitido e foi reajustado!', 3000)
+      desconto.value = descontoNum.toFixed(2)      
+      const tipo = 'warning'
+      const texto = 'O desconto informado é maior que o permitido e foi reajustado!'
+      mensagemNotify(tipo, texto)                
       if (acrescimoRef.value) {
         setTimeout(() => {
           acrescimoRef.value.focus()
@@ -2902,20 +2923,25 @@ watch(adiantamento, () => {
 }*/
 
 async function salvarOrcamento() {
-  debugger
-  //entrarOrcamento.value = true
+  debugger  
   if (!clienteSelecionado.value) {
-    showToast('Selecione um cliente!', 3000)
+    const tipo = 'warning'
+    const texto = 'Selecione um cliente!'
+    mensagemNotify(tipo, texto)    
     return
   }
 
   if (!itensOrcamento.value || itensOrcamento.value.length === 0) {
-    showToast('Adicione pelo menos 1 item!', 3000)
+    const tipo = 'warning'
+    const texto = 'Adicione pelo menos 1 item!'
+    mensagemNotify(tipo, texto)        
     return
   }
 
   if (!validade.value || validade.value.trim() === '') {
-    showToast('Selecione a validade do orçamento!', 3000)
+    const tipo = 'warning'
+    const texto = 'Selecione a validade do orçamento!'
+    mensagemNotify(tipo, texto)            
     return
   }
 
@@ -2924,7 +2950,9 @@ async function salvarOrcamento() {
   }
 
   if (!totalGeral.value || totalGeral.value <= 0) {
-    showToast('Total do orçamento não pode ser zero!', 3000)
+    const tipo = 'warning'
+    const texto = 'O total do orçamento não pode ser zero!'
+    mensagemNotify(tipo, texto)                
     return
   }
 
@@ -2961,8 +2989,10 @@ async function salvarOrcamento() {
     limparOrcamento()
     carregarOrcamento()
   } catch (error) {
-    console.error('Erro ao salvar orçamento:', error)
-    showToast('Erro ao salvar orçamento!', 3000)
+    console.error('Erro ao salvar orçamento:', error)    
+    const tipo = 'negative'
+    const texto = 'Erro ao salvar orçamento!'
+    mensagemNotify(tipo, texto)                
   }
 }
 
@@ -2996,8 +3026,11 @@ watch(
     const hoje = new Date()
     hoje.setHours(0, 0, 0, 0)
     const dataEscolhida = new Date(dataFormatada + 'T00:00:00')
-    if (dataEscolhida < hoje && entrarOrcamento.value == false) {
-      showToast(`A validade não pode ser menor que a data atual!`, 3000)
+    if (dataEscolhida < hoje && entrarOrcamento.value == false) {      
+      Notify.create({
+              type: 'warning',
+              message: 'A validade não pode ser menor que a data atual!',
+            })
       validade.value = null
     }
   },
@@ -3014,8 +3047,10 @@ function validarValidade(val, entrarOrcamento) {
 
   const dataEscolhida = new Date(dataFormatada + 'T00:00:00')
 
-  if (dataEscolhida < hoje && !entrarOrcamento) {
-    showToast('A validade não pode ser menor que a data atual!', 3000)
+  if (dataEscolhida < hoje && !entrarOrcamento) {    
+    const tipo = 'warning'
+    const texto = 'A validade não pode ser menor que a data atual!'
+    mensagemNotify(tipo, texto)                
     return false
   }
   return true
@@ -3128,8 +3163,10 @@ function excluirOrcamento(id) {
           try {
             await fetch(`${API_URL}/orcamentos/${id}`, {
               method: 'DELETE',
-            })
-            showToastv(`Orçamento excluído com sucesso!`, 1500)
+            })            
+            const tipo = 'warning'
+            const texto = 'Orçamento excluído com sucesso!'
+            mensagemNotify(tipo, texto)                
             carregarOrcamento()
           } catch (err) {
             console.error('Erro ao excluir orçamento:', err)
@@ -3153,8 +3190,10 @@ const idOrcamentoEdicao = ref(null)
 const editarOrcamento = async (row) => {
   // debugger
 
-  if (row.status?.toLowerCase() === 'finalizado') {
-    showToast('Este orçamento está Finalizado e não pode ser editado!', 2000)
+  if (row.status?.toLowerCase() === 'finalizado') {    
+    const tipo = 'warning'
+    const texto = 'Este orçamento está Finalizado e não pode ser editado!'
+    mensagemNotify(tipo, texto)                
     return
   }
   console.log('DADOS ENVIADOS PARA EDITAR:', row)
@@ -3225,9 +3264,32 @@ async function carregarItensDoOrcamento(id) {
 }
 
 async function salvarEdicao() {
-  debugger
+  //debugger
+  if (!clienteSelecionado.value) {
+    const tipo = 'warning'
+    const texto = 'Selecione um cliente!'
+    mensagemNotify(tipo, texto)    
+    return
+  }
+
+  if (!itensOrcamento.value || itensOrcamento.value.length === 0) {
+    const tipo = 'warning'
+    const texto = 'Adicione pelo menos 1 item!'
+    mensagemNotify(tipo, texto)        
+    return
+  }
+
+  if (!validade.value || validade.value.trim() === '') {
+    const tipo = 'warning'
+    const texto = 'Selecione a validade do orçamento!'
+    mensagemNotify(tipo, texto)            
+    return
+  }
+
   if (!idOrcamentoEdicao.value) {
-    showToast('Orçamento inválido para edição')
+    const tipo = 'warning'
+    const texto = 'Orçamento inválido para edição!'
+    mensagemNotify(tipo, texto)                
     return
   }
   const dados = {
@@ -3253,14 +3315,18 @@ async function salvarEdicao() {
     if (resultado.success || resultado.sucesso) {
       idOrcamentoEdicao.value = null
       carregarOrcamento()
-    } else {
-      showToast('Erro ao atualizar orçamento')
+    } else {      
+      const tipo = 'negative'
+      const texto = 'Erro ao atualizar orçamento!'
+      mensagemNotify(tipo, texto)                
     }
 
     finalizarEdicao()
   } catch (erro) {
-    console.error('Erro ao atualizar orçamento:', erro)
-    showToast(erro.message || 'Erro ao atualizar orçamento')
+    console.error('Erro ao atualizar orçamento:', erro)    
+    const tipo = 'negative'
+    const texto = 'Erro ao atualizar orçamento!'
+    mensagemNotify(tipo, texto)                
   }
 }
 
@@ -3605,8 +3671,10 @@ async function salvarServico() {
   }
   item.value.duracao = duracao.value
   item.value.precovenda = precovendaser.value
-  if (!item.value.nome || !item.value.precovenda || !duracaoHhmm.value) {
-    showToast('Preencha todos os campos obrigatórios!', 1000)
+  if (!item.value.nome || !item.value.precovenda || !duracaoHhmm.value) {    
+    const tipo = 'warning'
+    const texto = 'Preencha todos os campos obrigatórios!'
+    mensagemNotify(tipo, texto)                
     if (!item.value.nome) return nomeser.value?.focus()
     if (!item.value.precovenda) return vendaser.value?.focus()
     if (!duracaoHhmm.value) return duracaoser.value?.focus()
@@ -3640,19 +3708,27 @@ async function salvarServico() {
 async function salvarOrdem() {
   // debugger
   if (!clienteSelecionado.value) {
-    showToast('Selecione um cliente!', 3000)
+    const tipo = 'warning'
+    const texto = 'Selecione um cliente!'
+    mensagemNotify(tipo, texto)                               
     return
   }
-  if (!objetoSelecionado.value) {
-    showToast('Selecione o objeto da ordem!', 3000)
+  if (!objetoSelecionado.value) {  
+    const tipo = 'warning'
+    const texto = 'Selecione o objeto da ordem!'
+    mensagemNotify(tipo, texto)                               
     return
   }
-  if (!itensOrdemos.value?.length) {
-    showToast('Adicione pelo menos 1 item!', 3000)
+  if (!itensOrdemos.value?.length) {    
+    const tipo = 'warning'
+    const texto = 'Selecione pelo menos 1 item!'
+    mensagemNotify(tipo, texto)                               
     return
   }
-  if (!totalGeral.value || totalGeral.value <= 0) {
-    showToast('Total da ordem não pode ser zero!', 3000)
+  if (!totalGeral.value || totalGeral.value <= 0) {    
+    const tipo = 'warning'
+    const texto = 'Total da ordem não pode ser zero!'
+    mensagemNotify(tipo, texto)                               
     return
   }
   const payload = {
@@ -3701,12 +3777,16 @@ const editarOs = async (row) => {
   entrarOrcamento.value = true
   aviso.value = false
   const status = (row.status || '').toUpperCase()
-  if (status === 'FINALIZADA' || status === 'FINALIZADO') {
-    showToast('Esta OS está finalizada, não pode ser editada!', 2000)
+  if (status === 'FINALIZADA' || status === 'FINALIZADO') {    
+    const tipo = 'warning'
+    const texto = 'Esta OS está finalizada, não pode ser editada!'
+    mensagemNotify(tipo, texto)                
     return
   }
-  if (status === 'CANCELADA' || status === 'CANCELADA') {
-    showToast('Esta OS está cancelada, não pode ser editada!', 2000)
+  if (status === 'CANCELADA' || status === 'CANCELADA') {    
+    const tipo = 'warning'
+    const texto = 'Esta OS está cancelada, não pode ser editada!'
+    mensagemNotify(tipo, texto)                
     return
   }
   titulo.value = 'ATUALIZAR ORDEM DE SERVIÇO - Nº: ' + row.numeroos
@@ -3843,8 +3923,10 @@ function atualizarTotaisOs() {
   if (!aviso.value) {
     if (descontoNum >= totalBase && !entrarOrcamento.value) {
       descontoNum = totalBase - VALOR_MINIMO
-      desconto.value = descontoNum.toFixed(2)
-      showToast('Desconto reajustado para manter o valor mínimo da fatura.', 3000)
+      desconto.value = descontoNum.toFixed(2)      
+      const tipo = 'warning'
+      const texto = 'Desconto reajustado para manter o valor mínimo da fatura!'
+      mensagemNotify(tipo, texto)                
     }
     const totalFinal = totalBase - descontoNum - adiantamentoNum
     totalGeral.value = Math.max(VALOR_MINIMO, totalFinal)
@@ -3897,8 +3979,10 @@ function excluirOs(id) {
           try {
             await fetch(`${API_URL}/ordemservico/${id}`, {
               method: 'DELETE',
-            })
-            showToastv(`Ordem de Serviço excluída com sucesso!`, 1500)
+            })            
+            const tipo = 'positive'
+            const texto = 'Ordem de Serviço excluída com sucesso!'
+            mensagemNotify(tipo, texto)                
             listarOrdensServico()
           } catch (err) {
             console.error('Erro ao excluir orçamento:', err)
@@ -3981,20 +4065,28 @@ function limparFormularioSer() {
 
 async function salvarEdicaoOs() {
   // debugger
-  if (!clienteSelecionado.value) {
-    showToast('Selecione um cliente!', 3000)
+  if (!clienteSelecionado.value) {    
+    const tipo = 'warning'
+    const texto = 'Selecione um cliente!'
+    mensagemNotify(tipo, texto)                               
     return
   }
-  if (!objetoSelecionado.value) {
-    showToast('Selecione o objeto da ordem!', 3000)
+  if (!objetoSelecionado.value) {    
+    const tipo = 'warning'
+    const texto = 'Selecione o objeto da ordem!'
+    mensagemNotify(tipo, texto)                               
     return
   }
-  if (!itensOrdemos.value?.length) {
-    showToast('Adicione pelo menos 1 item!', 3000)
+  if (!itensOrdemos.value?.length) {    
+    const tipo = 'warning'
+    const texto = 'Adicione pelo menos 1 item!'
+    mensagemNotify(tipo, texto)                               
     return
   }
-  if (!totalGeral.value || totalGeral.value <= 0) {
-    showToast('Total da ordem não pode ser zero!', 3000)
+  if (!totalGeral.value || totalGeral.value <= 0) {    
+    const tipo = 'warning'
+    const texto = 'O total da ordem não pode ser zerado!'
+    mensagemNotify(tipo, texto)                               
     return
   }
   const dados = {
@@ -4022,8 +4114,10 @@ async function salvarEdicaoOs() {
     listagemos.value = true
     listarOrdensServico()
   } else {
-    console.error(resultado)
-    showToast(resultado.error || 'Erro ao atualizar OS')
+    console.error(resultado)    
+    const tipo = 'negative'
+    const texto = 'Erro ao atualizar Ordem de Serviço!'
+    mensagemNotify(tipo, texto)                
   }
 }
 
@@ -4076,7 +4170,7 @@ function rowClassOs(row) {
 }
 
 async function removerObjeto(objeto, index) {
-  // objeto novo (ainda não salvo)
+  
   if (!objeto.id) {
     objetos.value.splice(index, 1)
     return
@@ -4090,14 +4184,15 @@ async function removerObjeto(objeto, index) {
     if (!res.ok || data.permitido === false) {
       console.log('Bloqueado:', data.mensagem)
       showToast(data.mensagem, 4000)
-      return // ⛔ NÃO remove da tela
+      return 
     }
-
-    // ✅ permitido → remove
+    
     objetos.value.splice(index, 1)
   } catch (err) {
-    console.error(err)
-    showToast('Erro ao validar objeto', 3000)
+    console.error(err)    
+    const tipo = 'negative'
+    const texto = 'Erro ao validar objeto!'
+    mensagemNotify(tipo, texto)                
   }
 }
 
@@ -4122,15 +4217,17 @@ watch(clienteSelecionado, async (novoCliente) => {
       : `/clientes/${novoCliente}/objetos`
 
     const res = await axios.get(url)
-    objetosCliente.value = Array.isArray(res.data) ? res.data : []
-
-    // 🔹 Aviso somente quando NÃO for cancelada nem finalizada
-    if (!usarRotaCompleta && objetosCliente.value.length === 0) {
-      showToast('Este cliente não possui objetos cadastrados!', 3000)
+    objetosCliente.value = Array.isArray(res.data) ? res.data : []    
+    if (!usarRotaCompleta && objetosCliente.value.length === 0) {      
+      const tipo = 'warning'
+      const texto = 'Este cliente não possui objetos cadastrados!'
+      mensagemNotify(tipo, texto)                
     }
   } catch (err) {
-    console.error('Erro ao carregar objetos:', err)
-    showToast('Erro ao carregar objetos do cliente', 3000)
+    console.error('Erro ao carregar objetos:', err)    
+    const tipo = 'negative'
+    const texto = 'Erro ao carregar objetos do cliente!'
+    mensagemNotify(tipo, texto)                
   } finally {
     carregandoObjetos.value = false
   }
@@ -4138,25 +4235,20 @@ watch(clienteSelecionado, async (novoCliente) => {
 
 function formatarPlacaSerie() {
   if (!objetoForm.value.placaserie) return
-
   let v = objetoForm.value.placaserie.toUpperCase().replace(/[^A-Z0-9]/g, '')
-
   // Placa antiga: ABC1234 → ABC-1234
   if (/^[A-Z]{3}\d{4}$/.test(v)) {
     objetoForm.value.placaserie = v.replace(/^([A-Z]{3})(\d{4})$/, '$1-$2')
     return
   }
-
   // Mercosul: ABC1D23 → mantém
   if (/^[A-Z]{3}\d[A-Z]\d{2}$/.test(v)) {
     objetoForm.value.placaserie = v
     return
-  }
-
-  // Caso não seja placa → considera SÉRIE (não mexe)
+  }  
 }
 
-///////Pedido de Venda
+///////Pedido de Venda////////
 const idPedidoEdicao = ref(null)
 
 const colunasvendedor = [
@@ -4169,15 +4261,18 @@ const colunasvendedor = [
   { name: 'acoes', label: 'Ações', field: 'acoes', align: 'center' },
 ]
 
-async function salvarVendedor() {
-  // 🔒 Validações básicas
+async function salvarVendedor() {  
 
-  if (!vendedor.value.cpf) {
-    showToast('CPF é obrigatório!', 1000)
+  if (!vendedor.value.cpf) {    
+    const tipo = 'warning'
+    const texto = 'O CPF é obrigatório!'
+    mensagemNotify(tipo, texto)                
     return cpfInput.value?.focus()
   }
-  if (!vendedor.value.nome) {
-    showToast('Nome é obrigatório!', 1000)
+  if (!vendedor.value.nome) {    
+    const tipo = 'warning'
+    const texto = 'O nome é obrigatório!'
+    mensagemNotify(tipo, texto)                
     return nomeInput.value?.focus()
   }
 
@@ -4188,13 +4283,17 @@ async function salvarVendedor() {
     hoje.setHours(0, 0, 0, 0)
     const dataAdmissao = new Date(dataFormatada + 'T00:00:00')
     if (dataAdmissao > hoje) {
-      showToast('A data de admissão não pode ser maior que a data atual!', 1500)
+      const tipo = 'warning'
+      const texto = 'A data de admissão não pode ser maior que a data atual!'
+      mensagemNotify(tipo, texto)                                 
       return
     }
   }
 
-  if (cepcerto.value === false) {
-    showToast('Preencha um CEP correto!', 1000)
+  if (cepcerto.value === false) {    
+    const tipo = 'negative'
+    const texto = 'Preencha um CEP correto!'
+    mensagemNotify(tipo, texto)                           
     vendedor.value.cep = ''
     return cepInput.value?.focus()
   }
@@ -4202,14 +4301,14 @@ async function salvarVendedor() {
   /* =========================
      🔹 NOVO VENDEDOR (POST)
      ========================= */
-  if (!vendedor.value.id) {
-    // 🔍 verifica CPF duplicado
+  if (!vendedor.value.id) {    
     const vendedoresExistentes = await fetch(`${API_URL}/vendedores`).then((res) => res.json())
-
     const cpfDuplicado = vendedoresExistentes.find((v) => v.cpf === vendedor.value.cpf)
 
-    if (cpfDuplicado) {
-      showToast('Já existe um vendedor com este CPF!', 1500)
+    if (cpfDuplicado) {      
+      const tipo = 'negative'
+      const texto = 'Já existe um vendedor com este CPF!'
+      mensagemNotify(tipo, texto)                           
       return cpfInput.value?.focus()
     }
 
@@ -4227,21 +4326,20 @@ async function salvarVendedor() {
         bairro: vendedor.value.bairro,
         salario: vendedor.value.salario,
         comissao: vendedor.value.comissao,
-        dataadmissao: admissao.value, // 🔑 backend espera dataadmissao
+        dataadmissao: admissao.value, 
       }),
     })
 
-    if (!res.ok) {
-      showToast('Erro ao salvar vendedor!', 1500)
+    if (!res.ok) {      
+      const tipo = 'negative'
+      const texto = 'Erro ao salvar vendedor!'
+      mensagemNotify(tipo, texto)                           
       return
     }
     Notify.create({ type: 'positive', message: 'Vendedor salvo com sucesso!' })
     limparFormularioVendedor()
     carregarVendedores()
   } else {
-    /* =========================
-     🔹 ATUALIZA VENDEDOR (PUT)
-     ========================= */
     await fetch(`${API_URL}/vendedores/${vendedor.value.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -4280,7 +4378,6 @@ async function carregarVendedores() {
 
 const salarioFormatado = ref('')
 
-/* 🔄 sincroniza quando editar */
 watch(
   () => vendedor.value.salario,
   (val) => {
@@ -4291,7 +4388,6 @@ watch(
   { immediate: true },
 )
 
-/* 💰 formatação visual */
 function formatarMoeda(valor) {
   return Number(valor).toLocaleString('pt-BR', {
     minimumFractionDigits: 2,
@@ -4396,6 +4492,7 @@ const colunasPv = [
     align: 'center',
   },
 ]
+
 let totalitempv
 function atualizarTotaispv() {
   let VALOR_MINIMO = 0.01
@@ -4410,8 +4507,10 @@ function atualizarTotaispv() {
   if (!entrarPedido.value) {
   if (descontoNum > descontoMaximo) {
     descontoNum = descontoMaximo
-    desconto.value = descontoNum.toFixed(2)
-    showToast('O desconto informado é maior que o permitido e foi reajustado!', 3000)
+    desconto.value = descontoNum.toFixed(2)    
+    const tipo = 'warning'
+    const texto = 'O desconto informado é maior que o permitido e foi reajustado!'
+    mensagemNotify(tipo, texto)                           
     if (acrescimoRef.value) {
       setTimeout(() => {
         acrescimoRef.value.focus()
@@ -4429,27 +4528,37 @@ function atualizarTotaispv() {
 
 async function salvarPedido() {
   if (!clienteSelecionado.value) {
-    showToast('Selecione um cliente!', 3000)
+    const tipo = 'warning'
+    const texto = 'Selecione um cliente!'
+    mensagemNotify(tipo, texto)                    
     return
   }
 
   if (!vendedorSelecionado.value) {
-    showToast('Selecione um vendedor!', 3000)
+    const tipo = 'warning'
+    const texto = 'Selecione um vendedor!'
+    mensagemNotify(tipo, texto)                        
     return
   }
 
   if (!previssao.value) {
-    showToast('Deve indicar a previssão de entrega!', 3000)
+    const tipo = 'warning'
+    const texto = 'Deve indicar a previssão de entrega!'
+    mensagemNotify(tipo, texto)                            
     return
   }
 
-  if (!itensPedido.value?.length) {
-    showToast('Adicione pelo menos 1 item!', 3000)
+  if (!itensPedido.value?.length) {        
+    const tipo = 'warning'
+    const texto = 'Adicione pelo menos 1 item!'
+    mensagemNotify(tipo, texto)                            
     return
   }
 
-  if (Number(totalGeral.value) <= 0) {
-    showToast('Total do pedido não pode ser zero!', 3000)
+  if (Number(totalGeral.value) <= 0) {    
+    const tipo = 'warning'
+    const texto = 'Total do pedido não pode ser zero!'
+    mensagemNotify(tipo, texto)                           
     return
   }
   const valorDesconto = Number(valordesconto.value || 0)
@@ -4489,13 +4598,13 @@ async function salvarPedido() {
       })
       listarPedidosVenda()
     }
-
     console.log('Retorno:', res.data)
-    limparPv()
-    // carregarPedidos()
+    limparPv()    
   } catch (error) {
-    console.error('Erro ao salvar pedido:', error.response?.data || error)
-    showToast(error.response?.data?.erro || 'Erro ao salvar pedido!', 3000)
+    console.error('Erro ao salvar pedido:', error.response?.data || error)    
+    const tipo = 'negative'
+    const texto = 'Erro ao salvar pedido!!'
+    mensagemNotify(tipo, texto)                                    
   }
 }
 
@@ -4596,12 +4705,16 @@ async function limparPv() {
 const editarPv = async (row) => {  
   desabilitarTudo.value = false
   const status = (row.status || '').toUpperCase()
-  if (status === 'FINALIZADA' || status === 'FINALIZADO') {
-    showToast('Este pedido está finalizado e não pode ser editado!', 2000)
+  if (status === 'FINALIZADA' || status === 'FINALIZADO') {    
+    const tipo = 'warning'
+    const texto = 'Este pedido está finalizado e não pode ser editado!'
+    mensagemNotify(tipo, texto)                                    
     return
   }
-  if (status === 'CANCELADA' || status === 'CANCELADO') {
-    showToast('Este pedido está cancelado e não pode ser editado!', 2000)
+  if (status === 'CANCELADA' || status === 'CANCELADO') {    
+    const tipo = 'warning'
+    const texto = 'Este pedido está cancelado e não pode ser editado!'
+    mensagemNotify(tipo, texto)                                    
     return
   }  
   titulo.value = `ATUALIZAR PEDIDO DE VENDA - Nº: ${row.numero}`  
@@ -4647,9 +4760,11 @@ async function salvarEdicaoPv() {
   const valorDesconto = Number(valordesconto.value || 0)
   const valorAcrescimo = Number(valoracrescimo.value || 0)
   const valorItensPv = Number(totalitempv || 0)
+  
+
   const dados = {
     clienteid: clienteSelecionado.value,
-    vendedorid: vendedorSelecionado.value, // 🔴 obrigatório (FK)
+    vendedorid: vendedorSelecionado.value, 
     previssao: previssao.value,
     observacoes: observacao.value,
     status: item.value.status,
@@ -4662,7 +4777,7 @@ async function salvarEdicaoPv() {
 
     itens: itensPedido.value.map(i => ({
       produtoid: i.produtoid,
-      descricao: i.nome || i.descricao, // garante nome do item
+      descricao: i.nome || i.descricao, 
       quantidade: Number(i.quantidade),
       valorunit: Number(i.valorunit),
       total: Number(i.total),
@@ -4688,8 +4803,10 @@ async function salvarEdicaoPv() {
     listarPedidosVenda()    
 
   } catch (erro) {
-    console.error('❌ Erro ao atualizar pedido:', erro)
-    showToast(erro.message || 'Erro ao atualizar pedido')
+    console.error('❌ Erro ao atualizar pedido:', erro)    
+    const tipo = 'negative'
+    const texto = 'Erro ao atualizar pedido!'
+    mensagemNotify(tipo, texto)                                    
   }
 }
 
@@ -4784,7 +4901,7 @@ function imprimirPedido(id) {
 }
 
 /////////////////////////////
-//MÓDULOS DE UTILIZAÇÃO GERAL
+//FUNÇÕES DE UTILIZAÇÃO GERAIS
 ////////////////////////////
 
 function hhmmParaReal(valor) {
@@ -4814,17 +4931,11 @@ function showToast(message, tempo = 3000) {
   }
 }
 
-function showToastv(message, tempo = 3000) {
-  const toast = document.getElementById('toastv')
-  if (toast) {
-    toast.textContent = message
-    toast.classList.add('show')
-    toast.style.display = 'block'
-    setTimeout(() => {
-      toast.classList.remove('show')
-      toast.style.display = 'none'
-    }, tempo)
-  }
+function mensagemNotify(tipo, texto){
+  Notify.create({
+    type: tipo,
+    message: texto,
+  })    
 }
 
 function validarDecimal(campo) {
