@@ -1998,6 +1998,73 @@ app.post('/pedidos', async (req, res) => {
   }
 })
 
+app.get('/pedidosdetalhe/:id', async (req, res) => {
+  const { id } = req.params
+  const client = await pool.connect()
+
+  try {
+    const pedidoResult = await client.query(
+      `
+      SELECT
+        p.id,
+        p.numero,
+        p.clienteid,
+        c.nome AS clientenome,
+        c.cpf AS clientecpf,
+        p.vendedorid,
+        v.nome AS vendedornome,
+        p.datacriacao,
+        p.previssao,
+        p.observacoes,
+        p.valordesconto,
+        p.valoracrescimo,
+        p.valortotalitens,
+        p.valortotal,
+        p.status
+      FROM pedidos p
+      JOIN clientes c ON c.id = p.clienteid
+      JOIN vendedor v ON v.id = p.vendedorid
+      WHERE p.id = $1
+      `,
+      [id],
+    )
+
+    if (!pedidoResult.rows.length) {
+      return res.status(404).json({ error: 'Pedido não encontrado' })
+    }
+
+    const pedido = pedidoResult.rows[0]
+
+    const itensResult = await client.query(
+      `
+      SELECT
+        ip.id,
+        ip.produtoid,
+        ip.descricao,
+        ip.quantidade,
+        ip.valorunit,
+        ip.total,
+        ip.tipoitem
+      FROM itenspedido ip
+      WHERE ip.pedidoid = $1
+      ORDER BY ip.id ASC
+      `,
+      [id],
+    )
+
+    pedido.itens = itensResult.rows
+
+    res.json(pedido)
+  } catch (err) {
+    console.error('❌ Erro ao buscar pedido:', err.message)
+    res.status(500).json({ error: 'Erro ao buscar pedido' })
+  } finally {
+    client.release()
+  }
+})
+
+
+
 app.put('/pedidos/:id', async (req, res) => {
   const { id } = req.params
   const {
@@ -2106,9 +2173,6 @@ app.put('/pedidos/:id', async (req, res) => {
     client.release()
   }
 })
-
-
-
 
 app.get('/pedidos', async (req, res) => {
   try {

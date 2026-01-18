@@ -202,3 +202,79 @@ ________________________________
    Obrigado pela preferência!
 `
 }
+
+export async function imprimirPdPorId(id) {
+  const dados = await buscarPd(id)
+  const texto = gerarTextoCupomPd(dados)
+  imprimirTexto(texto)
+}
+
+export async function buscarPd(id) {
+  const res = await fetch(`http://localhost:3000/pedidosdetalhe/${id}`)
+  if (!res.ok) {
+    throw new Error('Erro ao buscar pedido de venda')
+  }
+  return await res.json()
+}
+
+export function gerarTextoCupomPd(pedido) {
+  const numero = pedido?.numero ?? '-'
+  const cliente = pedido?.clientenome ?? '-'
+  const cpf = pedido?.clientecpf ?? '-'
+  const vendedor = pedido?.vendedornome ?? '-'
+  const data = formatarData(pedido?.datacriacao, true)
+  const status = pedido?.status ?? '-'
+
+  /* ============================
+     🔹 ITENS
+     ============================ */
+  const itens =
+    Array.isArray(pedido?.itens) && pedido.itens.length
+      ? pedido.itens
+          .map((i) => {
+            const desc = (i.descricao ?? '').padEnd(15).slice(0, 12)
+            const qtd = String(i.quantidade ?? 1).padStart(3)
+            const total = Number(i.total ?? 0).toFixed(2).padStart(8)
+
+            return `${desc.padEnd(12)} ${qtd}    R$ ${total}`
+          })
+          .join('\n')
+      : 'Nenhum item'
+
+  const largura = 17
+
+  const totalItens = Number(pedido?.valortotalitens ?? 0).toFixed(2).padStart(largura)
+  const desconto = Number(pedido?.valordesconto ?? 0).toFixed(2).padStart(largura)
+  const acrescimo = Number(pedido?.valoracrescimo ?? 0).toFixed(2).padStart(largura)
+  const total = Number(pedido?.valortotal ?? 0).toFixed(2).padStart(largura)
+
+  return `
+================================
+   PEDIDO DE VENDA Nº ${numero}
+================================
+DATA     : ${data}
+STATUS   : ${status}
+VENDEDOR : ${vendedor}
+________________________________
+
+CLIENTE: ${cliente}
+CPF: ${cpf}
+================================
+ITEM          QTD      TOTAL
+================================
+${itens}
+________________________________
+ITENS:      R$ ${totalItens}
+DESCONTO:   R$ ${desconto}
+ACRÉSCIMO:  R$ ${acrescimo}
+TOTAL:      R$ ${total}
+________________________________
+
+ Assinatura do Cliente:
+
+ _______________________________
+
+   Obrigado pela preferência!
+`
+}
+

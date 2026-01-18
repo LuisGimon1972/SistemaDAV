@@ -397,7 +397,7 @@
                   limpapv = false
                   titulo = 'NOVO PEDIDO DE VENDA'
                   desabilitarTudo = false
-                  modoEdicao.value = false
+                  modoEdicao = false
                   cadastrarpv = true
                   menuAtivo = 'cadastropv'
                 }
@@ -416,6 +416,7 @@
                   ocultar()
                   trocartituloOs()
                   orcamentodav = false
+                  entrarPedido = false
                   listagempv = true
                   menuAtivo = 'listadoPv'
                 }
@@ -1788,14 +1789,14 @@
                       size="sm"
                       color="negative"
                       icon="delete"
-                      @click="excluirOs(props.row.id)"
+                      @click="excluirPv(props.row.id)"
                     />
                     <q-btn size="sm" color="blue" icon="visibility" @click="verPv(props.row)" />
                     <q-btn
                       size="sm"
                       color="positive"
                       icon="print"
-                      @click="imprimirOrdem(props.row.id)"
+                      @click="imprimirPedido(props.row.id)"
                     />
                   </template>
 
@@ -2148,7 +2149,7 @@
 <script setup>
 import logo from 'src/assets/logo.png'
 import usuario from 'src/assets/usuario.png'
-import { imprimirOrcamentoPorId, imprimirOsPorId } from 'src/utils/impressao.js'
+import { imprimirOrcamentoPorId, imprimirOsPorId, imprimirPdPorId } from 'src/utils/impressao.js'
 import { ref, onMounted, watch, nextTick } from 'vue'
 import novoCliente from 'src/models/Cliente'
 import novoVendedor from 'src/models/Vendedor'
@@ -2648,6 +2649,7 @@ function limparFormularioI() {
 //MODULO NOVO ORÇAMENTO
 const criarOrcamento = ref(false)
 const entrarOrcamento = ref(false)
+const entrarPedido = ref(false)
 const clienteSelecionado = ref(null)
 const vendedorSelecionado = ref(null)
 const objetoSelecionado = ref(null)
@@ -3292,7 +3294,7 @@ function imprimirOrcamento(id) {
 function imprimirOrdem(id) {
   imprimirOsPorId(id)
 }
-imprimirOsPorId
+
 function abrirRelatorioPeriodo() {
   dialogRelatorioPeriodo.value = true
 }
@@ -4405,6 +4407,7 @@ function atualizarTotaispv() {
   let descontoNum = Number(valordesconto.value) || 0
   const totalBase = subtotal + acrescimoNum
   const descontoMaximo = Math.max(0, totalBase - VALOR_MINIMO)
+  if (!entrarPedido.value) {
   if (descontoNum > descontoMaximo) {
     descontoNum = descontoMaximo
     desconto.value = descontoNum.toFixed(2)
@@ -4415,6 +4418,7 @@ function atualizarTotaispv() {
       }, 50)
     }
   }
+}
   if (limpapv.value) {
     VALOR_MINIMO = 0.0
   }
@@ -4605,7 +4609,7 @@ const editarPv = async (row) => {
   cadastrarpv.value = true
   orcamentodav.value = false
   listagempv.value = false
-  entrarOrcamento.value = false  
+  entrarPedido.value = false  
   idPvEdicao.value = row.id
   clienteSelecionado.value = row.clienteid
   vendedorSelecionado.value = row.vendedorid
@@ -4616,6 +4620,7 @@ const editarPv = async (row) => {
   item.value.status = row.status || 'ABERTO'  
   await carregarItensDoPedido(row.id)
   atualizarTotaispv()
+  entrarPedido.value = true  
 }
 
 const verPv = async (row) => {
@@ -4624,16 +4629,18 @@ const verPv = async (row) => {
   cadastrarpv.value = true
   orcamentodav.value = false
   listagempv.value = false
-  entrarOrcamento.value = false  
+  entrarPedido.value = false
   idPvEdicao.value = row.id
   clienteSelecionado.value = row.clienteid
   vendedorSelecionado.value = row.vendedorid
+  previssao.value = formatarDataBR(row.previssao) 
   observacao.value = row.observacoes ?? ''  
   valordesconto.value = Number(row.valordesconto) || 0
   valoracrescimo.value = Number(row.valoracrescimo) || 0  
   item.value.status = row.status || 'ABERTO'  
   await carregarItensDoPedido(row.id)
   atualizarTotaispv()
+  entrarPedido.value = true
 }
 
 async function salvarEdicaoPv() {
@@ -4686,8 +4693,6 @@ async function salvarEdicaoPv() {
   }
 }
 
-
-
 async function carregarItensDoPedido(id) {
   try {
     const res = await fetch(`${API_URL}/pedidos/${id}/itens`)
@@ -4719,6 +4724,45 @@ async function carregarItensDoPedido(id) {
   }
 }
 
+function excluirPv(id) {
+  Notify.create({
+    message: 'Tem certeza que deseja excluir esse Pedido de Venda?',
+    caption: 'Essa ação não poderá ser desfeita.',
+    color: 'blue-10',
+    icon: 'warning',
+    position: 'center',
+    actions: [
+      {
+        label: 'Cancelar',
+        color: 'white',
+      },
+      {
+        label: 'Excluir',
+        color: 'red-6',
+        handler: async () => {
+          try {
+            await fetch(`${API_URL}/pedidos/${id}`, {
+              method: 'DELETE',
+            })
+            Notify.create({
+              type: 'positive',
+              message: `Pedido de Venda excluído com sucesso!!`,
+            })                
+            listarPedidosVenda()    
+          } catch (err) {
+            console.error('Erro ao excluir orçamento:', err)
+
+            Notify.create({
+              type: 'negative',
+              message: 'Erro ao excluir pedido. Verifique sua conexão.',
+            })
+          }
+        },
+      },
+    ],
+  })
+}
+
 function formatarSalario() {
   let valor = salarioFormatado.value
 
@@ -4733,6 +4777,10 @@ function formatarSalario() {
 
   vendedor.value.salario = isNaN(num) ? 0 : num
   salarioFormatado.value = formatarMoeda(vendedor.value.salario)
+}
+
+function imprimirPedido(id) {
+  imprimirPdPorId(id)
 }
 
 /////////////////////////////
