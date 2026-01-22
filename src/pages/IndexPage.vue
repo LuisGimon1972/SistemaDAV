@@ -2328,10 +2328,10 @@ const buscarCep = async (val) => {
   try {
     const res = await axios.get(`https://viacep.com.br/ws/${cep}/json/`)
 
-    if (res.data.erro) {      
+    if (res.data.erro) {
       const tipo = 'negative'
       const texto = 'CEP não encontrado ou inválido!'
-      mensagemNotify(tipo, texto)                
+      mensagemNotify(tipo, texto)
       cepcerto.value = false
       return
     }
@@ -2344,28 +2344,28 @@ const buscarCep = async (val) => {
     vendedor.value.endereco = res.data.logradouro.toUpperCase() || ''
     cepcerto.value = true
   } catch (err) {
-    console.error('Erro ao buscar CEP', err)    
+    console.error('Erro ao buscar CEP', err)
     const tipo = 'negative'
     const texto = 'Erro ao buscar CEP!'
-    mensagemNotify(tipo, texto)                
+    mensagemNotify(tipo, texto)
   }
 }
 
 async function salvarCliente() {
-  if (!cliente.value.nome || !cliente.value.cpf || !cliente.value.limite) {    
+  if (!cliente.value.nome || !cliente.value.cpf || !cliente.value.limite) {
     const tipo = 'warning'
     const texto = 'Preencha todos os campos obrigatórios!'
-    mensagemNotify(tipo, texto)                
+    mensagemNotify(tipo, texto)
     if (!cliente.value.cpf) return cpfInput.value?.focus()
     if (!cliente.value.nome) return nomeInput.value?.focus()
     if (!cliente.value.limite) return limiteInput.value?.focus()
     return
   }
 
-  if (cepcerto.value === false) {    
+  if (cepcerto.value === false) {
     const tipo = 'warning'
     const texto = 'Preencha um CEP correto!'
-    mensagemNotify(tipo, texto)                
+    mensagemNotify(tipo, texto)
     cliente.value.cep = ''
     return cepInput.value?.focus()
   }
@@ -2378,10 +2378,10 @@ async function salvarCliente() {
 
     const cpfDuplicado = clientesExistentes.find((c) => c.cpf === cliente.value.cpf)
 
-    if (cpfDuplicado) {      
+    if (cpfDuplicado) {
       const tipo = 'negative'
       const texto = 'Já existe um cliente com este CPF!'
-      mensagemNotify(tipo, texto)                
+      mensagemNotify(tipo, texto)
       return cpfInput.value?.focus()
     }
 
@@ -2502,10 +2502,10 @@ async function editarVendedor(c) {
     }
     admissao.value = data.dataadmissao
   } catch (err) {
-    console.error(err)    
+    console.error(err)
     const tipo = 'negative'
     const texto = 'Erro ao carregar vendedor!'
-    mensagemNotify(tipo, texto)                
+    mensagemNotify(tipo, texto)
   }
 }
 
@@ -2554,10 +2554,10 @@ async function salvarItem() {
     !item.value.quantidade ||
     !item.value.precocusto ||
     !item.value.precovenda
-  ) {    
+  ) {
     const tipo = 'warning'
     const texto = 'Preencha todos os campos obrigatórios!'
-    mensagemNotify(tipo, texto)                
+    mensagemNotify(tipo, texto)
     if (!item.value.codbarras) return codInput.value?.focus()
     if (!item.value.nome) return nomeiInput.value?.focus()
     if (!item.value.quantidade) return quanInput.value?.focus()
@@ -2572,14 +2572,14 @@ async function salvarItem() {
   if (!item.value.controle && itemExistente) {
     const tipo = 'warning'
     const texto = 'Código de barras já está sendo usado em outro item!'
-    mensagemNotify(tipo, texto)                
+    mensagemNotify(tipo, texto)
     return codInput.value?.focus()
   }
 
-  if (item.value.controle && itemExistente && itemExistente.controle !== item.value.controle) {    
-      const tipo = 'warning'
-      const texto = 'Código de barras já está sendo usado em outro item!'
-      mensagemNotify(tipo, texto)                
+  if (item.value.controle && itemExistente && itemExistente.controle !== item.value.controle) {
+    const tipo = 'warning'
+    const texto = 'Código de barras já está sendo usado em outro item!'
+    mensagemNotify(tipo, texto)
     return codInput.value?.focus()
   }
 
@@ -2612,8 +2612,7 @@ async function salvarItem() {
 async function excluirItem(controle) {
   Dialog.create({
     title: 'Excluir Produto',
-    message:
-      'Tem certeza que deseja excluir esse item? Essa ação <b>não poderá ser desfeita</b>.',
+    message: 'Tem certeza que deseja excluir esse item? Essa ação <b>não poderá ser desfeita</b>.',
     html: true,
     icon: 'warning',
     ok: {
@@ -2629,10 +2628,10 @@ async function excluirItem(controle) {
     persistent: true,
   }).onOk(async () => {
     try {
-      await fetch(`${API_URL}/itens/${controle}`, { method: 'DELETE' })      
+      await fetch(`${API_URL}/itens/${controle}`, { method: 'DELETE' })
       const tipo = 'positive'
       const texto = 'Item excluido com sucesso!'
-      mensagemNotify(tipo, texto)                
+      mensagemNotify(tipo, texto)
       carregarItens()
       carregarServicos()
     } catch (err) {
@@ -2815,10 +2814,10 @@ const buscarItem = async () => {
 
     resultadoBusca.value = dados
 
-    if (dados.length === 0) {      
+    if (dados.length === 0) {
       const tipo = 'negative'
       const texto = 'Nenhum item encontrado!'
-      mensagemNotify(tipo, texto)                
+      mensagemNotify(tipo, texto)
       itemSelecionado.value = -1
     } else {
       itemSelecionado.value = 0
@@ -2826,10 +2825,10 @@ const buscarItem = async () => {
 
     console.log('Itens encontrados:', dados)
   } catch (err) {
-    console.error('Erro ao buscar itens:', err)    
+    console.error('Erro ao buscar itens:', err)
     const tipo = 'negative'
     const texto = 'Erro ao buscar itens!'
-    mensagemNotify(tipo, texto)                
+    mensagemNotify(tipo, texto)
 
     resultadoBusca.value = []
     itemSelecionado.value = -1
@@ -2873,10 +2872,10 @@ function atualizarTotais() {
   if (!entrarOrcamento.value) {
     if (descontoNum > descontoMaximo) {
       descontoNum = descontoMaximo
-      desconto.value = descontoNum.toFixed(2)      
+      desconto.value = descontoNum.toFixed(2)
       const tipo = 'warning'
       const texto = 'O desconto informado é maior que o permitido e foi reajustado!'
-      mensagemNotify(tipo, texto)                
+      mensagemNotify(tipo, texto)
       if (acrescimoRef.value) {
         setTimeout(() => {
           acrescimoRef.value.focus()
@@ -2923,25 +2922,25 @@ watch(adiantamento, () => {
 }*/
 
 async function salvarOrcamento() {
-  debugger  
+  debugger
   if (!clienteSelecionado.value) {
     const tipo = 'warning'
     const texto = 'Selecione um cliente!'
-    mensagemNotify(tipo, texto)    
+    mensagemNotify(tipo, texto)
     return
   }
 
   if (!itensOrcamento.value || itensOrcamento.value.length === 0) {
     const tipo = 'warning'
     const texto = 'Adicione pelo menos 1 item!'
-    mensagemNotify(tipo, texto)        
+    mensagemNotify(tipo, texto)
     return
   }
 
   if (!validade.value || validade.value.trim() === '') {
     const tipo = 'warning'
     const texto = 'Selecione a validade do orçamento!'
-    mensagemNotify(tipo, texto)            
+    mensagemNotify(tipo, texto)
     return
   }
 
@@ -2952,7 +2951,7 @@ async function salvarOrcamento() {
   if (!totalGeral.value || totalGeral.value <= 0) {
     const tipo = 'warning'
     const texto = 'O total do orçamento não pode ser zero!'
-    mensagemNotify(tipo, texto)                
+    mensagemNotify(tipo, texto)
     return
   }
 
@@ -2989,10 +2988,10 @@ async function salvarOrcamento() {
     limparOrcamento()
     carregarOrcamento()
   } catch (error) {
-    console.error('Erro ao salvar orçamento:', error)    
+    console.error('Erro ao salvar orçamento:', error)
     const tipo = 'negative'
     const texto = 'Erro ao salvar orçamento!'
-    mensagemNotify(tipo, texto)                
+    mensagemNotify(tipo, texto)
   }
 }
 
@@ -3026,11 +3025,11 @@ watch(
     const hoje = new Date()
     hoje.setHours(0, 0, 0, 0)
     const dataEscolhida = new Date(dataFormatada + 'T00:00:00')
-    if (dataEscolhida < hoje && entrarOrcamento.value == false) {      
+    if (dataEscolhida < hoje && entrarOrcamento.value == false) {
       Notify.create({
-              type: 'warning',
-              message: 'A validade não pode ser menor que a data atual!',
-            })
+        type: 'warning',
+        message: 'A validade não pode ser menor que a data atual!',
+      })
       validade.value = null
     }
   },
@@ -3047,10 +3046,10 @@ function validarValidade(val, entrarOrcamento) {
 
   const dataEscolhida = new Date(dataFormatada + 'T00:00:00')
 
-  if (dataEscolhida < hoje && !entrarOrcamento) {    
+  if (dataEscolhida < hoje && !entrarOrcamento) {
     const tipo = 'warning'
     const texto = 'A validade não pode ser menor que a data atual!'
-    mensagemNotify(tipo, texto)                
+    mensagemNotify(tipo, texto)
     return false
   }
   return true
@@ -3163,10 +3162,10 @@ function excluirOrcamento(id) {
           try {
             await fetch(`${API_URL}/orcamentos/${id}`, {
               method: 'DELETE',
-            })            
+            })
             const tipo = 'warning'
             const texto = 'Orçamento excluído com sucesso!'
-            mensagemNotify(tipo, texto)                
+            mensagemNotify(tipo, texto)
             carregarOrcamento()
           } catch (err) {
             console.error('Erro ao excluir orçamento:', err)
@@ -3190,10 +3189,10 @@ const idOrcamentoEdicao = ref(null)
 const editarOrcamento = async (row) => {
   // debugger
 
-  if (row.status?.toLowerCase() === 'finalizado') {    
+  if (row.status?.toLowerCase() === 'finalizado') {
     const tipo = 'warning'
     const texto = 'Este orçamento está Finalizado e não pode ser editado!'
-    mensagemNotify(tipo, texto)                
+    mensagemNotify(tipo, texto)
     return
   }
   console.log('DADOS ENVIADOS PARA EDITAR:', row)
@@ -3268,28 +3267,28 @@ async function salvarEdicao() {
   if (!clienteSelecionado.value) {
     const tipo = 'warning'
     const texto = 'Selecione um cliente!'
-    mensagemNotify(tipo, texto)    
+    mensagemNotify(tipo, texto)
     return
   }
 
   if (!itensOrcamento.value || itensOrcamento.value.length === 0) {
     const tipo = 'warning'
     const texto = 'Adicione pelo menos 1 item!'
-    mensagemNotify(tipo, texto)        
+    mensagemNotify(tipo, texto)
     return
   }
 
   if (!validade.value || validade.value.trim() === '') {
     const tipo = 'warning'
     const texto = 'Selecione a validade do orçamento!'
-    mensagemNotify(tipo, texto)            
+    mensagemNotify(tipo, texto)
     return
   }
 
   if (!idOrcamentoEdicao.value) {
     const tipo = 'warning'
     const texto = 'Orçamento inválido para edição!'
-    mensagemNotify(tipo, texto)                
+    mensagemNotify(tipo, texto)
     return
   }
   const dados = {
@@ -3315,18 +3314,18 @@ async function salvarEdicao() {
     if (resultado.success || resultado.sucesso) {
       idOrcamentoEdicao.value = null
       carregarOrcamento()
-    } else {      
+    } else {
       const tipo = 'negative'
       const texto = 'Erro ao atualizar orçamento!'
-      mensagemNotify(tipo, texto)                
+      mensagemNotify(tipo, texto)
     }
 
     finalizarEdicao()
   } catch (erro) {
-    console.error('Erro ao atualizar orçamento:', erro)    
+    console.error('Erro ao atualizar orçamento:', erro)
     const tipo = 'negative'
     const texto = 'Erro ao atualizar orçamento!'
-    mensagemNotify(tipo, texto)                
+    mensagemNotify(tipo, texto)
   }
 }
 
@@ -3671,10 +3670,10 @@ async function salvarServico() {
   }
   item.value.duracao = duracao.value
   item.value.precovenda = precovendaser.value
-  if (!item.value.nome || !item.value.precovenda || !duracaoHhmm.value) {    
+  if (!item.value.nome || !item.value.precovenda || !duracaoHhmm.value) {
     const tipo = 'warning'
     const texto = 'Preencha todos os campos obrigatórios!'
-    mensagemNotify(tipo, texto)                
+    mensagemNotify(tipo, texto)
     if (!item.value.nome) return nomeser.value?.focus()
     if (!item.value.precovenda) return vendaser.value?.focus()
     if (!duracaoHhmm.value) return duracaoser.value?.focus()
@@ -3710,25 +3709,25 @@ async function salvarOrdem() {
   if (!clienteSelecionado.value) {
     const tipo = 'warning'
     const texto = 'Selecione um cliente!'
-    mensagemNotify(tipo, texto)                               
+    mensagemNotify(tipo, texto)
     return
   }
-  if (!objetoSelecionado.value) {  
+  if (!objetoSelecionado.value) {
     const tipo = 'warning'
     const texto = 'Selecione o objeto da ordem!'
-    mensagemNotify(tipo, texto)                               
+    mensagemNotify(tipo, texto)
     return
   }
-  if (!itensOrdemos.value?.length) {    
+  if (!itensOrdemos.value?.length) {
     const tipo = 'warning'
     const texto = 'Selecione pelo menos 1 item!'
-    mensagemNotify(tipo, texto)                               
+    mensagemNotify(tipo, texto)
     return
   }
-  if (!totalGeral.value || totalGeral.value <= 0) {    
+  if (!totalGeral.value || totalGeral.value <= 0) {
     const tipo = 'warning'
     const texto = 'Total da ordem não pode ser zero!'
-    mensagemNotify(tipo, texto)                               
+    mensagemNotify(tipo, texto)
     return
   }
   const payload = {
@@ -3777,16 +3776,16 @@ const editarOs = async (row) => {
   entrarOrcamento.value = true
   aviso.value = false
   const status = (row.status || '').toUpperCase()
-  if (status === 'FINALIZADA' || status === 'FINALIZADO') {    
+  if (status === 'FINALIZADA' || status === 'FINALIZADO') {
     const tipo = 'warning'
     const texto = 'Esta OS está finalizada, não pode ser editada!'
-    mensagemNotify(tipo, texto)                
+    mensagemNotify(tipo, texto)
     return
   }
-  if (status === 'CANCELADA' || status === 'CANCELADA') {    
+  if (status === 'CANCELADA' || status === 'CANCELADA') {
     const tipo = 'warning'
     const texto = 'Esta OS está cancelada, não pode ser editada!'
-    mensagemNotify(tipo, texto)                
+    mensagemNotify(tipo, texto)
     return
   }
   titulo.value = 'ATUALIZAR ORDEM DE SERVIÇO - Nº: ' + row.numeroos
@@ -3923,10 +3922,10 @@ function atualizarTotaisOs() {
   if (!aviso.value) {
     if (descontoNum >= totalBase && !entrarOrcamento.value) {
       descontoNum = totalBase - VALOR_MINIMO
-      desconto.value = descontoNum.toFixed(2)      
+      desconto.value = descontoNum.toFixed(2)
       const tipo = 'warning'
       const texto = 'Desconto reajustado para manter o valor mínimo da fatura!'
-      mensagemNotify(tipo, texto)                
+      mensagemNotify(tipo, texto)
     }
     const totalFinal = totalBase - descontoNum - adiantamentoNum
     totalGeral.value = Math.max(VALOR_MINIMO, totalFinal)
@@ -3979,10 +3978,10 @@ function excluirOs(id) {
           try {
             await fetch(`${API_URL}/ordemservico/${id}`, {
               method: 'DELETE',
-            })            
+            })
             const tipo = 'positive'
             const texto = 'Ordem de Serviço excluída com sucesso!'
-            mensagemNotify(tipo, texto)                
+            mensagemNotify(tipo, texto)
             listarOrdensServico()
           } catch (err) {
             console.error('Erro ao excluir orçamento:', err)
@@ -4065,28 +4064,28 @@ function limparFormularioSer() {
 
 async function salvarEdicaoOs() {
   // debugger
-  if (!clienteSelecionado.value) {    
+  if (!clienteSelecionado.value) {
     const tipo = 'warning'
     const texto = 'Selecione um cliente!'
-    mensagemNotify(tipo, texto)                               
+    mensagemNotify(tipo, texto)
     return
   }
-  if (!objetoSelecionado.value) {    
+  if (!objetoSelecionado.value) {
     const tipo = 'warning'
     const texto = 'Selecione o objeto da ordem!'
-    mensagemNotify(tipo, texto)                               
+    mensagemNotify(tipo, texto)
     return
   }
-  if (!itensOrdemos.value?.length) {    
+  if (!itensOrdemos.value?.length) {
     const tipo = 'warning'
     const texto = 'Adicione pelo menos 1 item!'
-    mensagemNotify(tipo, texto)                               
+    mensagemNotify(tipo, texto)
     return
   }
-  if (!totalGeral.value || totalGeral.value <= 0) {    
+  if (!totalGeral.value || totalGeral.value <= 0) {
     const tipo = 'warning'
     const texto = 'O total da ordem não pode ser zerado!'
-    mensagemNotify(tipo, texto)                               
+    mensagemNotify(tipo, texto)
     return
   }
   const dados = {
@@ -4114,10 +4113,10 @@ async function salvarEdicaoOs() {
     listagemos.value = true
     listarOrdensServico()
   } else {
-    console.error(resultado)    
+    console.error(resultado)
     const tipo = 'negative'
     const texto = 'Erro ao atualizar Ordem de Serviço!'
-    mensagemNotify(tipo, texto)                
+    mensagemNotify(tipo, texto)
   }
 }
 
@@ -4170,7 +4169,6 @@ function rowClassOs(row) {
 }
 
 async function removerObjeto(objeto, index) {
-  
   if (!objeto.id) {
     objetos.value.splice(index, 1)
     return
@@ -4184,15 +4182,15 @@ async function removerObjeto(objeto, index) {
     if (!res.ok || data.permitido === false) {
       console.log('Bloqueado:', data.mensagem)
       showToast(data.mensagem, 4000)
-      return 
+      return
     }
-    
+
     objetos.value.splice(index, 1)
   } catch (err) {
-    console.error(err)    
+    console.error(err)
     const tipo = 'negative'
     const texto = 'Erro ao validar objeto!'
-    mensagemNotify(tipo, texto)                
+    mensagemNotify(tipo, texto)
   }
 }
 
@@ -4217,17 +4215,17 @@ watch(clienteSelecionado, async (novoCliente) => {
       : `/clientes/${novoCliente}/objetos`
 
     const res = await axios.get(url)
-    objetosCliente.value = Array.isArray(res.data) ? res.data : []    
-    if (!usarRotaCompleta && objetosCliente.value.length === 0) {      
+    objetosCliente.value = Array.isArray(res.data) ? res.data : []
+    if (!usarRotaCompleta && objetosCliente.value.length === 0) {
       const tipo = 'warning'
       const texto = 'Este cliente não possui objetos cadastrados!'
-      mensagemNotify(tipo, texto)                
+      mensagemNotify(tipo, texto)
     }
   } catch (err) {
-    console.error('Erro ao carregar objetos:', err)    
+    console.error('Erro ao carregar objetos:', err)
     const tipo = 'negative'
     const texto = 'Erro ao carregar objetos do cliente!'
-    mensagemNotify(tipo, texto)                
+    mensagemNotify(tipo, texto)
   } finally {
     carregandoObjetos.value = false
   }
@@ -4245,7 +4243,7 @@ function formatarPlacaSerie() {
   if (/^[A-Z]{3}\d[A-Z]\d{2}$/.test(v)) {
     objetoForm.value.placaserie = v
     return
-  }  
+  }
 }
 
 ///////Pedido de Venda////////
@@ -4261,18 +4259,17 @@ const colunasvendedor = [
   { name: 'acoes', label: 'Ações', field: 'acoes', align: 'center' },
 ]
 
-async function salvarVendedor() {  
-
-  if (!vendedor.value.cpf) {    
+async function salvarVendedor() {
+  if (!vendedor.value.cpf) {
     const tipo = 'warning'
     const texto = 'O CPF é obrigatório!'
-    mensagemNotify(tipo, texto)                
+    mensagemNotify(tipo, texto)
     return cpfInput.value?.focus()
   }
-  if (!vendedor.value.nome) {    
+  if (!vendedor.value.nome) {
     const tipo = 'warning'
     const texto = 'O nome é obrigatório!'
-    mensagemNotify(tipo, texto)                
+    mensagemNotify(tipo, texto)
     return nomeInput.value?.focus()
   }
 
@@ -4285,15 +4282,15 @@ async function salvarVendedor() {
     if (dataAdmissao > hoje) {
       const tipo = 'warning'
       const texto = 'A data de admissão não pode ser maior que a data atual!'
-      mensagemNotify(tipo, texto)                                 
+      mensagemNotify(tipo, texto)
       return
     }
   }
 
-  if (cepcerto.value === false) {    
+  if (cepcerto.value === false) {
     const tipo = 'negative'
     const texto = 'Preencha um CEP correto!'
-    mensagemNotify(tipo, texto)                           
+    mensagemNotify(tipo, texto)
     vendedor.value.cep = ''
     return cepInput.value?.focus()
   }
@@ -4301,14 +4298,14 @@ async function salvarVendedor() {
   /* =========================
      🔹 NOVO VENDEDOR (POST)
      ========================= */
-  if (!vendedor.value.id) {    
+  if (!vendedor.value.id) {
     const vendedoresExistentes = await fetch(`${API_URL}/vendedores`).then((res) => res.json())
     const cpfDuplicado = vendedoresExistentes.find((v) => v.cpf === vendedor.value.cpf)
 
-    if (cpfDuplicado) {      
+    if (cpfDuplicado) {
       const tipo = 'negative'
       const texto = 'Já existe um vendedor com este CPF!'
-      mensagemNotify(tipo, texto)                           
+      mensagemNotify(tipo, texto)
       return cpfInput.value?.focus()
     }
 
@@ -4326,14 +4323,14 @@ async function salvarVendedor() {
         bairro: vendedor.value.bairro,
         salario: vendedor.value.salario,
         comissao: vendedor.value.comissao,
-        dataadmissao: admissao.value, 
+        dataadmissao: admissao.value,
       }),
     })
 
-    if (!res.ok) {      
+    if (!res.ok) {
       const tipo = 'negative'
       const texto = 'Erro ao salvar vendedor!'
-      mensagemNotify(tipo, texto)                           
+      mensagemNotify(tipo, texto)
       return
     }
     Notify.create({ type: 'positive', message: 'Vendedor salvo com sucesso!' })
@@ -4505,60 +4502,60 @@ function atualizarTotaispv() {
   const totalBase = subtotal + acrescimoNum
   const descontoMaximo = Math.max(0, totalBase - VALOR_MINIMO)
   if (!entrarPedido.value) {
-  if (descontoNum > descontoMaximo) {
-    descontoNum = descontoMaximo
-    desconto.value = descontoNum.toFixed(2)    
-    const tipo = 'warning'
-    const texto = 'O desconto informado é maior que o permitido e foi reajustado!'
-    mensagemNotify(tipo, texto)                           
-    if (acrescimoRef.value) {
-      setTimeout(() => {
-        acrescimoRef.value.focus()
-      }, 50)
+    if (descontoNum > descontoMaximo) {
+      descontoNum = descontoMaximo
+      desconto.value = descontoNum.toFixed(2)
+      const tipo = 'warning'
+      const texto = 'O desconto informado é maior que o permitido e foi reajustado!'
+      mensagemNotify(tipo, texto)
+      if (acrescimoRef.value) {
+        setTimeout(() => {
+          acrescimoRef.value.focus()
+        }, 50)
+      }
     }
   }
-}
   if (limpapv.value) {
     VALOR_MINIMO = 0.0
   }
   const totalFinal = totalBase - descontoNum
   totalGeral.value = Math.max(VALOR_MINIMO, totalFinal)
-  totalitempv = totalBase   
+  totalitempv = totalBase
 }
 
 async function salvarPedido() {
   if (!clienteSelecionado.value) {
     const tipo = 'warning'
     const texto = 'Selecione um cliente!'
-    mensagemNotify(tipo, texto)                    
+    mensagemNotify(tipo, texto)
     return
   }
 
   if (!vendedorSelecionado.value) {
     const tipo = 'warning'
     const texto = 'Selecione um vendedor!'
-    mensagemNotify(tipo, texto)                        
+    mensagemNotify(tipo, texto)
     return
   }
 
   if (!previssao.value) {
     const tipo = 'warning'
     const texto = 'Deve indicar a previssão de entrega!'
-    mensagemNotify(tipo, texto)                            
+    mensagemNotify(tipo, texto)
     return
   }
 
-  if (!itensPedido.value?.length) {        
+  if (!itensPedido.value?.length) {
     const tipo = 'warning'
     const texto = 'Adicione pelo menos 1 item!'
-    mensagemNotify(tipo, texto)                            
+    mensagemNotify(tipo, texto)
     return
   }
 
-  if (Number(totalGeral.value) <= 0) {    
+  if (Number(totalGeral.value) <= 0) {
     const tipo = 'warning'
     const texto = 'Total do pedido não pode ser zero!'
-    mensagemNotify(tipo, texto)                           
+    mensagemNotify(tipo, texto)
     return
   }
   const valorDesconto = Number(valordesconto.value || 0)
@@ -4599,12 +4596,12 @@ async function salvarPedido() {
       listarPedidosVenda()
     }
     console.log('Retorno:', res.data)
-    limparPv()    
+    limparPv()
   } catch (error) {
-    console.error('Erro ao salvar pedido:', error.response?.data || error)    
+    console.error('Erro ao salvar pedido:', error.response?.data || error)
     const tipo = 'negative'
     const texto = 'Erro ao salvar pedido!!'
-    mensagemNotify(tipo, texto)                                    
+    mensagemNotify(tipo, texto)
   }
 }
 
@@ -4702,43 +4699,43 @@ async function limparPv() {
   }
 }
 
-const editarPv = async (row) => {  
+const editarPv = async (row) => {
   desabilitarTudo.value = false
   const status = (row.status || '').toUpperCase()
-  if (status === 'FINALIZADA' || status === 'FINALIZADO') {    
+  if (status === 'FINALIZADA' || status === 'FINALIZADO') {
     const tipo = 'warning'
     const texto = 'Este pedido está finalizado e não pode ser editado!'
-    mensagemNotify(tipo, texto)                                    
+    mensagemNotify(tipo, texto)
     return
   }
-  if (status === 'CANCELADA' || status === 'CANCELADO') {    
+  if (status === 'CANCELADA' || status === 'CANCELADO') {
     const tipo = 'warning'
     const texto = 'Este pedido está cancelado e não pode ser editado!'
-    mensagemNotify(tipo, texto)                                    
+    mensagemNotify(tipo, texto)
     return
-  }  
-  titulo.value = `ATUALIZAR PEDIDO DE VENDA - Nº: ${row.numero}`  
+  }
+  titulo.value = `ATUALIZAR PEDIDO DE VENDA - Nº: ${row.numero}`
   modoEdicao.value = true
   cadastrarpv.value = true
   orcamentodav.value = false
   listagempv.value = false
-  entrarPedido.value = false  
+  entrarPedido.value = true
   idPvEdicao.value = row.id
   clienteSelecionado.value = row.clienteid
   vendedorSelecionado.value = row.vendedorid
-  previssao.value = formatarDataBR(row.previssao) 
-  observacao.value = row.observacoes ?? ''  
+  previssao.value = formatarDataBR(row.previssao)
+  observacao.value = row.observacoes ?? ''
   valordesconto.value = Number(row.valordesconto) || 0
-  valoracrescimo.value = Number(row.valoracrescimo) || 0  
-  item.value.status = row.status || 'ABERTO'  
+  valoracrescimo.value = Number(row.valoracrescimo) || 0
+  item.value.status = row.status || 'ABERTO'
   await carregarItensDoPedido(row.id)
   atualizarTotaispv()
-  entrarPedido.value = true  
+  entrarPedido.value = false
 }
 
 const verPv = async (row) => {
-  desabilitarTudo.value = true  
-  titulo.value = `VISUALIZAR PEDIDO DE VENDA - Nº: ${row.numero}`  
+  desabilitarTudo.value = true
+  titulo.value = `VISUALIZAR PEDIDO DE VENDA - Nº: ${row.numero}`
   cadastrarpv.value = true
   orcamentodav.value = false
   listagempv.value = false
@@ -4746,11 +4743,11 @@ const verPv = async (row) => {
   idPvEdicao.value = row.id
   clienteSelecionado.value = row.clienteid
   vendedorSelecionado.value = row.vendedorid
-  previssao.value = formatarDataBR(row.previssao) 
-  observacao.value = row.observacoes ?? ''  
+  previssao.value = formatarDataBR(row.previssao)
+  observacao.value = row.observacoes ?? ''
   valordesconto.value = Number(row.valordesconto) || 0
-  valoracrescimo.value = Number(row.valoracrescimo) || 0  
-  item.value.status = row.status || 'ABERTO'  
+  valoracrescimo.value = Number(row.valoracrescimo) || 0
+  item.value.status = row.status || 'ABERTO'
   await carregarItensDoPedido(row.id)
   atualizarTotaispv()
   entrarPedido.value = true
@@ -4760,11 +4757,10 @@ async function salvarEdicaoPv() {
   const valorDesconto = Number(valordesconto.value || 0)
   const valorAcrescimo = Number(valoracrescimo.value || 0)
   const valorItensPv = Number(totalitempv || 0)
-  
 
   const dados = {
     clienteid: clienteSelecionado.value,
-    vendedorid: vendedorSelecionado.value, 
+    vendedorid: vendedorSelecionado.value,
     previssao: previssao.value,
     observacoes: observacao.value,
     status: item.value.status,
@@ -4772,17 +4768,17 @@ async function salvarEdicaoPv() {
 
     valordesconto: valorDesconto || 0,
     valoracrescimo: valorAcrescimo || 0,
-    valortotalitens: valorItensPv || 0,    
+    valortotalitens: valorItensPv || 0,
     valortotal: Number(totalGeral.value) || 0,
 
-    itens: itensPedido.value.map(i => ({
+    itens: itensPedido.value.map((i) => ({
       produtoid: i.produtoid,
-      descricao: i.nome || i.descricao, 
+      descricao: i.nome || i.descricao,
       quantidade: Number(i.quantidade),
       valorunit: Number(i.valorunit),
       total: Number(i.total),
     })),
-  }  
+  }
   try {
     const res = await fetch(`${API_URL}/pedidos/${idPvEdicao.value}`, {
       method: 'PUT',
@@ -4796,17 +4792,16 @@ async function salvarEdicaoPv() {
       throw new Error(resultado?.message || 'Erro ao atualizar pedido')
     }
     Notify.create({
-        type: 'positive',
-        message: `Pedido Nº${idPvEdicao.value} atualizado com sucesso!`,
-      })    
+      type: 'positive',
+      message: `Pedido Nº${idPvEdicao.value} atualizado com sucesso!`,
+    })
     idOrcamentoEdicao.value = null
-    listarPedidosVenda()    
-
+    listarPedidosVenda()
   } catch (erro) {
-    console.error('❌ Erro ao atualizar pedido:', erro)    
+    console.error('❌ Erro ao atualizar pedido:', erro)
     const tipo = 'negative'
     const texto = 'Erro ao atualizar pedido!'
-    mensagemNotify(tipo, texto)                                    
+    mensagemNotify(tipo, texto)
   }
 }
 
@@ -4819,7 +4814,7 @@ async function carregarItensDoPedido(id) {
     }
 
     const dados = await res.json()
-   
+
     if (!Array.isArray(dados)) {
       console.error('Itens do pedido inválidos:', dados)
       itensPedido.value = []
@@ -4829,12 +4824,11 @@ async function carregarItensDoPedido(id) {
     itensPedido.value = dados.map((item) => ({
       controle: item.id,
       produtoid: item.produtoid,
-      nome: item.nome, 
+      nome: item.nome,
       quantidade: Number(item.quantidade) || 0,
       valorunit: Number(item.valorunit) || 0,
       total: Number(item.total) || 0,
     }))
-
   } catch (err) {
     console.error('❌ Erro ao carregar itens do pedido:', err.message)
     itensPedido.value = []
@@ -4864,8 +4858,8 @@ function excluirPv(id) {
             Notify.create({
               type: 'positive',
               message: `Pedido de Venda excluído com sucesso!!`,
-            })                
-            listarPedidosVenda()    
+            })
+            listarPedidosVenda()
           } catch (err) {
             console.error('Erro ao excluir orçamento:', err)
 
@@ -4931,11 +4925,11 @@ function showToast(message, tempo = 3000) {
   }
 }
 
-function mensagemNotify(tipo, texto){
+function mensagemNotify(tipo, texto) {
   Notify.create({
     type: tipo,
     message: texto,
-  })    
+  })
 }
 
 function validarDecimal(campo) {
