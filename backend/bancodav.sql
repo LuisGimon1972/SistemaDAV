@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS clientes (
 
 CREATE TABLE IF NOT EXISTS vendedor (
     id SERIAL PRIMARY KEY,
-    cpf TEXT,
+    cpf TEXT NOT NULL UNIQUE,
     nome TEXT,    
     endereco TEXT,
     email TEXT,
@@ -29,7 +29,6 @@ CREATE TABLE IF NOT EXISTS vendedor (
     comissao REAL,
     dataadmissao TEXT
 );
-
 
 -- =========================
 -- TABELA ITENS (PRODUTOS)
